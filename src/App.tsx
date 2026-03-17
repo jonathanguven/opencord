@@ -598,8 +598,10 @@ function WorkspaceScreen() {
       return
     }
 
-    setDisplayNameDraft((value) => value || getDisplayName(current.user))
-    setHandleDraft((value) => value || current.user.handle || "")
+    const user = current.user
+
+    setDisplayNameDraft((value) => value || getDisplayName(user))
+    setHandleDraft((value) => value || user.handle || "")
   }, [current])
 
   useEffect(() => {
