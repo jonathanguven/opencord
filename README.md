@@ -13,10 +13,27 @@ Cloudflare Realtime SFU voice calling.
 ## Getting started
 
 1. Install dependencies with `npm install`.
-2. Copy `.env.example` to `.env.local` if you want local env defaults.
-3. Configure Convex env vars for Convex Auth providers, Cloudflare SFU, and
+2. Copy `.env.local.example` to `.env.local` and fill in any local provider or
+   Cloudflare values you need.
+3. Run `npm run auth:setup-local` once per Convex deployment to seed the
+   `JWT_PRIVATE_KEY` and `JWKS` values required by Convex Auth.
+4. Configure Convex env vars for Convex Auth providers, Cloudflare SFU, and
    Cloudflare TURN.
-4. Run `npm run dev` to start `convex dev`.
+5. Run `npm run dev` to start `convex dev`.
+
+## Auth env setup
+
+`JWT_PRIVATE_KEY` and `JWKS` are not read from `.env.local`. They must exist on
+the active Convex deployment because token signing happens inside Convex.
+
+Generate them with:
+
+```bash
+npm run auth:setup-local
+```
+
+The script is idempotent. If both values already exist for the current Convex
+deployment, it exits without changing them.
 
 ## Included backend surfaces
 
