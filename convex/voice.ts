@@ -1,9 +1,11 @@
 // @ts-nocheck
-import { action, internalMutation, mutation, query } from "./_generated/server";
-import { internal, api } from "./_generated/api";
+
 import { v } from "convex/values";
+import { api, internal } from "./_generated/api";
+import { action, internalMutation, mutation, query } from "./_generated/server";
 
 import { requireCurrentUser } from "./lib/auth";
+import { generateTurnIceServers } from "./lib/cloudflare";
 import {
   canAccessChannel,
   requireChannelAccess,
@@ -11,13 +13,12 @@ import {
   requireServerMember,
   resolveServerPermissions,
 } from "./lib/permissions";
-import {
-  addRealtimeParticipant,
-  createRealtimeMeeting,
-  refreshRealtimeParticipantToken,
-} from "./lib/cloudflare";
 
 const HEARTBEAT_TIMEOUT_MS = 45_000;
+const TURN_TTL_SECONDS = 60 * 60 * 4;
+
+const resolveRoomKey = (room: { roomKey?: string; scopeId: string }) =>
+  room.roomKey ?? `voice:${room.scopeId}`;
 
 export const listForServer = query({
   args: {
@@ -33,15 +34,26 @@ export const listForServer = query({
       .collect();
 
     const fresh = voiceStates.filter(
-      (state) => Date.now() - state.lastHeartbeatAt < HEARTBEAT_TIMEOUT_MS,
+      (state) => Date.now() - state.lastHeartbeatAt < HEARTBEAT_TIMEOUT_MS
     );
 
     return Promise.all(
       fresh.map(async (state) => ({
         ...state,
         user: await ctx.db.get(state.userId),
-      })),
+      }))
     );
+  },
+});
+
+export const getSelfState = query({
+  args: {},
+  handler: async (ctx) => {
+    const { user } = await requireCurrentUser(ctx);
+    return ctx.db
+      .query("activeVoiceStates")
+      .withIndex("by_userId", (query) => query.eq("userId", user._id))
+      .unique();
   },
 });
 
@@ -51,7 +63,11 @@ export const getVoiceJoinContext = query({
   },
   handler: async (ctx, args) => {
     const { user } = await requireCurrentUser(ctx);
-    const { channel, member } = await requireChannelAccess(ctx, args.channelId, user._id);
+    const { channel, member } = await requireChannelAccess(
+      ctx,
+      args.channelId,
+      user._id
+    );
 
     if (channel.kind !== "voice") {
       throw new Error("You can only join voice channels.");
@@ -61,16 +77,22 @@ export const getVoiceJoinContext = query({
     const room = await ctx.db
       .query("callRooms")
       .withIndex("by_scope", (query) =>
-        query.eq("scopeType", "voiceChannel").eq("scopeId", args.channelId),
+        query.eq("scopeType", "voiceChannel").eq("scopeId", args.channelId)
       )
+      .unique();
+    const voiceState = await ctx.db
+      .query("activeVoiceStates")
+      .withIndex("by_userId", (query) => query.eq("userId", user._id))
       .unique();
 
     return {
       user,
       channel,
       member,
-      moderator: permissions.admin || permissions.moveMembers || permissions.muteMembers,
+      moderator:
+        permissions.admin || permissions.moveMembers || permissions.muteMembers,
       room,
+      voiceState,
     };
   },
 });
@@ -90,55 +112,76 @@ export const joinVoice = action({
       throw new Error("Unable to load voice channel.");
     }
 
-    let room = joinContext.room;
-    if (!room) {
-      const meeting = await createRealtimeMeeting(
-        `${joinContext.channel.name} (${joinContext.channel._id})`,
-      );
-      await ctx.runMutation(internal.voice.upsertCallRoom, {
-        scopeType: "voiceChannel",
+    const callRoomId = await ctx.runMutation(
+      internal.realtimeCalls.ensureCallRoom,
+      {
         scopeId: joinContext.channel._id,
-        meetingId: meeting.id,
-      });
-      room = await ctx.runQuery(api.voice.getVoiceJoinContext, args).then((value) => value?.room);
-    }
-
-    if (!room) {
-      throw new Error("Unable to create a room for this channel.");
-    }
-
-    const participant = await addRealtimeParticipant({
-      meetingId: room.meetingId,
-      displayName: current.user.displayName,
-      customParticipantId: current.user._id,
-      moderator: joinContext.moderator,
+        scopeType: "voiceChannel",
+      }
+    );
+    const room = await ctx.runQuery(internal.realtimeCalls.getRoomById, {
+      callRoomId,
     });
 
     await ctx.runMutation(internal.voice.upsertVoiceState, {
-      userId: current.user._id,
-      serverId: joinContext.channel.serverId,
       channelId: joinContext.channel._id,
+      serverId: joinContext.channel.serverId,
+      userId: current.user._id,
     });
 
+    const currentVoiceState = await ctx.runQuery(api.voice.getSelfState, {});
+    const iceServers = await generateTurnIceServers(TURN_TTL_SECONDS);
+
     return {
-      authToken: participant.authToken,
-      participantId: participant.participantId,
-      meetingId: room.meetingId,
+      callRoomId,
       channelId: joinContext.channel._id,
-      serverId: joinContext.channel.serverId,
+      currentDeafened: currentVoiceState?.deafened ?? false,
+      currentMuted: currentVoiceState?.muted ?? false,
+      displayName: current.user.displayName,
+      forcedDeafen: currentVoiceState?.forcedDeafen ?? false,
+      forcedMute: currentVoiceState?.forcedMute ?? false,
+      iceServers,
       moderator: joinContext.moderator,
+      roomKey: resolveRoomKey(room),
+      selfUserId: current.user._id,
+      serverId: joinContext.channel.serverId,
     };
   },
 });
 
-export const refreshToken = action({
+export const connectVoiceSession = action({
   args: {
-    meetingId: v.string(),
-    participantId: v.string(),
+    callRoomId: v.id("callRooms"),
+    channelId: v.id("channels"),
+    localAudioMid: v.string(),
+    localAudioTrackName: v.string(),
+    offer: v.object({
+      sdp: v.string(),
+      type: v.union(v.literal("offer"), v.literal("answer")),
+    }),
   },
-  handler: async (_ctx, args) => {
-    const token = await refreshRealtimeParticipantToken(args);
-    return { authToken: token };
+  handler: async (ctx, args) => {
+    const current = await ctx.runQuery(api.users.current, {});
+    if (!current?.user) {
+      throw new Error("Finish onboarding before joining voice.");
+    }
+
+    const joinContext = await ctx.runQuery(api.voice.getVoiceJoinContext, {
+      channelId: args.channelId,
+    });
+    if (!joinContext) {
+      throw new Error("Unable to load voice channel.");
+    }
+
+    return ctx.runAction(internal.realtimeCalls.connectSessionForRoom, {
+      callRoomId: args.callRoomId,
+      localAudioMid: args.localAudioMid,
+      localAudioTrackName: args.localAudioTrackName,
+      offer: args.offer,
+      scopeId: joinContext.channel._id,
+      scopeType: "voiceChannel",
+      userId: current.user._id,
+    });
   },
 });
 
@@ -224,7 +267,9 @@ export const moveMember = mutation({
       ctx.db.get(args.targetChannelId),
       ctx.db
         .query("activeVoiceStates")
-        .withIndex("by_userId", (query) => query.eq("userId", args.memberUserId))
+        .withIndex("by_userId", (query) =>
+          query.eq("userId", args.memberUserId)
+        )
         .unique(),
     ]);
 
@@ -293,41 +338,6 @@ export const setMemberDeafen = mutation({
     await ctx.db.patch(state._id, {
       forcedDeafen: args.forcedDeafen,
       lastHeartbeatAt: Date.now(),
-    });
-  },
-});
-
-export const upsertCallRoom = internalMutation({
-  args: {
-    scopeType: v.union(v.literal("dm"), v.literal("voiceChannel")),
-    scopeId: v.string(),
-    meetingId: v.string(),
-  },
-  handler: async (ctx, args) => {
-    const existing = await ctx.db
-      .query("callRooms")
-      .withIndex("by_scope", (query) =>
-        query.eq("scopeType", args.scopeType).eq("scopeId", args.scopeId),
-      )
-      .unique();
-
-    if (existing) {
-      await ctx.db.patch(existing._id, {
-        meetingId: args.meetingId,
-        status: "ready",
-        updatedAt: Date.now(),
-      });
-      return existing._id;
-    }
-
-    return ctx.db.insert("callRooms", {
-      scopeType: args.scopeType,
-      scopeId: args.scopeId,
-      provider: "cloudflare-realtimekit",
-      meetingId: args.meetingId,
-      status: "ready",
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
     });
   },
 });

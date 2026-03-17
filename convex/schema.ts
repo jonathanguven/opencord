@@ -163,12 +163,34 @@ export default defineSchema({
   callRooms: defineTable({
     scopeType: v.union(v.literal("dm"), v.literal("voiceChannel")),
     scopeId: v.string(),
-    provider: v.literal("cloudflare-realtimekit"),
-    meetingId: v.string(),
+    provider: v.union(
+      v.literal("cloudflare-realtime-sfu"),
+      v.literal("cloudflare-realtimekit"),
+    ),
+    roomKey: v.optional(v.string()),
+    meetingId: v.optional(v.string()),
     status: v.union(v.literal("ready"), v.literal("failed")),
     createdAt: v.number(),
     updatedAt: v.number(),
   }).index("by_scope", ["scopeType", "scopeId"]),
+
+  callRoomParticipants: defineTable({
+    callRoomId: v.id("callRooms"),
+    scopeType: v.union(v.literal("dm"), v.literal("voiceChannel")),
+    scopeId: v.string(),
+    userId: v.id("users"),
+    sessionId: v.string(),
+    audioTrackName: v.string(),
+    publishedMid: v.optional(v.string()),
+    subscriptionMids: v.array(v.string()),
+    status: v.union(v.literal("joining"), v.literal("connected"), v.literal("leaving")),
+    joinedAt: v.number(),
+    lastHeartbeatAt: v.number(),
+  })
+    .index("by_callRoomId", ["callRoomId"])
+    .index("by_scope", ["scopeType", "scopeId"])
+    .index("by_user_callRoom", ["userId", "callRoomId"])
+    .index("by_sessionId", ["sessionId"]),
 
   dmCallSessions: defineTable({
     conversationId: v.id("conversations"),

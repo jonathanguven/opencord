@@ -116,6 +116,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useCloudflareSfuCall } from "@/hooks/use-cloudflare-sfu-call"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import {
   Tooltip,
@@ -170,23 +171,35 @@ type WorkspaceResult = {
 
 type ActiveCall =
   | {
+      callRoomId: Id<"callRooms">
+      deafened: boolean
+      iceServers: Array<{
+        credential?: string
+        urls: string[]
+        username?: string
+      }>
       kind: "voice"
-      serverId: Id<"servers">
       channelId: Id<"channels">
       label: string
       muted: boolean
-      deafened: boolean
-      meetingId: string
-      participantId: string
+      roomKey: string
+      serverId: Id<"servers">
+      sessionId?: string
     }
   | {
+      callRoomId: Id<"callRooms">
+      deafened: boolean
+      iceServers: Array<{
+        credential?: string
+        urls: string[]
+        username?: string
+      }>
       kind: "dm"
       conversationId: Id<"conversations">
       label: string
       muted: boolean
-      deafened: boolean
-      meetingId: string
-      participantId: string
+      roomKey: string
+      sessionId?: string
     }
 
 type ChannelKind = Doc<"channels">["kind"]
@@ -536,6 +549,10 @@ function WorkspaceScreen() {
     api.servers.getWorkspace,
     activeServerId ? { serverId: activeServerId } : "skip"
   ) as WorkspaceResult | undefined
+  const activeCallWorkspace = useQuery(
+    api.servers.getWorkspace,
+    activeCall?.kind === "voice" ? { serverId: activeCall.serverId } : "skip"
+  ) as WorkspaceResult | undefined
   const voicePresence = useQuery(
     api.voice.listForServer,
     activeServerId ? { serverId: activeServerId } : "skip"
@@ -711,6 +728,49 @@ function WorkspaceScreen() {
       ? voicePresence.filter((state) => state.channelId === activeChannel._id)
       : []
 
+  const moveToChannel = async (targetChannelId: Id<"channels">) => {
+    const targetChannel =
+      activeCallWorkspace?.channels.find((channel) => channel._id === targetChannelId) ??
+      null
+    if (!targetChannel || targetChannel.kind !== "voice") {
+      return
+    }
+
+    try {
+      const session = await joinVoice({ channelId: targetChannel._id })
+      setActiveCall({
+        callRoomId: session.callRoomId,
+        channelId: session.channelId,
+        deafened: session.currentDeafened || session.forcedDeafen,
+        iceServers: session.iceServers,
+        kind: "voice",
+        label: `#${targetChannel.name}`,
+        muted:
+          session.currentMuted ||
+          session.forcedMute ||
+          session.currentDeafened ||
+          session.forcedDeafen,
+        roomKey: session.roomKey,
+        serverId: session.serverId,
+      })
+      toast.success(`Moved to ${targetChannel.name}.`)
+    } catch (error) {
+      toast.error(getErrorMessage(error))
+    }
+  }
+
+  const { isConnecting: isCallConnecting, leave: disconnectSfuCall, selfVoiceState } =
+    useCloudflareSfuCall({
+      activeCall,
+      currentUserId: current?.user?._id,
+      onCallChange: (updater) => {
+        setActiveCall((currentCall) => updater(currentCall))
+      },
+      onMoveToChannel: (channelId) => {
+        void moveToChannel(channelId)
+      },
+    })
+
   const submitOnboarding = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setHandleError(null)
@@ -864,15 +924,16 @@ function WorkspaceScreen() {
       await startDmCall({ conversationId: activeConversationId })
       const session = await joinDmCall({ conversationId: activeConversationId })
       setActiveCall({
+        callRoomId: session.callRoomId,
         kind: "dm",
         conversationId: activeConversationId,
         deafened: false,
+        iceServers: session.iceServers,
         label: `DM with ${getDisplayName(activeConversation.otherUser)}`,
-        meetingId: session.meetingId,
         muted: false,
-        participantId: session.participantId,
+        roomKey: session.roomKey,
       })
-      toast.success("DM call session is ready.")
+      toast.success("Connecting DM call...")
     } catch (error) {
       toast.error(getErrorMessage(error))
     }
@@ -882,16 +943,21 @@ function WorkspaceScreen() {
     try {
       const session = await joinVoice({ channelId: channel._id })
       setActiveCall({
+        callRoomId: session.callRoomId,
         kind: "voice",
         channelId: session.channelId,
-        deafened: false,
+        deafened: session.currentDeafened || session.forcedDeafen,
+        iceServers: session.iceServers,
         label: `#${channel.name}`,
-        meetingId: session.meetingId,
-        muted: false,
-        participantId: session.participantId,
+        muted:
+          session.currentMuted ||
+          session.forcedMute ||
+          session.currentDeafened ||
+          session.forcedDeafen,
+        roomKey: session.roomKey,
         serverId: session.serverId,
       })
-      toast.success(`Joined ${channel.name}.`)
+      toast.success(`Connecting to ${channel.name}...`)
     } catch (error) {
       toast.error(getErrorMessage(error))
     }
@@ -903,6 +969,7 @@ function WorkspaceScreen() {
     }
 
     try {
+      await disconnectSfuCall()
       if (activeCall.kind === "voice") {
         await leaveVoice({})
       } else {
@@ -917,6 +984,11 @@ function WorkspaceScreen() {
 
   const toggleMute = async () => {
     if (!activeCall) {
+      return
+    }
+
+    if (activeCall.kind === "voice" && selfVoiceState?.forcedMute) {
+      toast.error("A moderator has muted you.")
       return
     }
 
@@ -940,8 +1012,17 @@ function WorkspaceScreen() {
       return
     }
 
+    if (activeCall.kind === "voice" && selfVoiceState?.forcedDeafen) {
+      toast.error("A moderator has deafened you.")
+      return
+    }
+
     const nextDeafened = !activeCall.deafened
-    setActiveCall({ ...activeCall, deafened: nextDeafened })
+    setActiveCall({
+      ...activeCall,
+      deafened: nextDeafened,
+      muted: activeCall.muted || nextDeafened,
+    })
 
     if (activeCall.kind === "voice") {
       try {
@@ -964,9 +1045,7 @@ function WorkspaceScreen() {
   }
 
   const triggerShareScreen = () => {
-    toast(
-      "Screen-share controls are in the shell and ready for the RealtimeKit client hookup."
-    )
+    toast("Screen share is not part of the SFU audio rollout yet.")
   }
 
   const toggleLeftSidebar = () => {
@@ -1509,6 +1588,7 @@ function WorkspaceScreen() {
 
               <CallTray
                 activeCall={activeCall}
+                isConnecting={isCallConnecting}
                 onDeafen={() => void toggleDeafen()}
                 onLeave={() => void leaveActiveCall()}
                 onMute={() => void toggleMute()}
@@ -2695,12 +2775,14 @@ function MembersPanel({
 
 function CallTray({
   activeCall,
+  isConnecting,
   onDeafen,
   onLeave,
   onMute,
   onShareScreen,
 }: {
   activeCall: ActiveCall | null
+  isConnecting: boolean
   onDeafen: () => void
   onLeave: () => void
   onMute: () => void
@@ -2726,8 +2808,8 @@ function CallTray({
         <div className="min-w-0">
           <div className="truncate font-medium">{activeCall.label}</div>
           <div className="truncate text-xs text-muted-foreground">
-            Meeting {activeCall.meetingId.slice(0, 8)} • Participant{" "}
-            {activeCall.participantId.slice(0, 8)}
+            Room {activeCall.roomKey} • Session{" "}
+            {activeCall.sessionId?.slice(0, 8) ?? "connecting"}
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -2745,11 +2827,16 @@ function CallTray({
           >
             {activeCall.deafened ? <VolumeXIcon /> : <Volume2Icon />}
           </Button>
-          <Button size="icon-sm" variant="outline" onClick={onShareScreen}>
+          <Button
+            disabled
+            size="icon-sm"
+            variant="outline"
+            onClick={onShareScreen}
+          >
             <MonitorUpIcon />
           </Button>
           <Button variant="destructive" onClick={onLeave}>
-            Leave call
+            {isConnecting ? "Cancel" : "Leave call"}
           </Button>
         </div>
       </div>

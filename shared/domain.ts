@@ -31,38 +31,38 @@ export const defaultPermissionSet = (): PermissionSet => ({
   admin: false,
 });
 
-export type AppUser = {
+export interface AppUser {
   id: string;
   handle: string;
   displayName: string;
   avatarUrl?: string;
   createdAt: number;
-};
+}
 
-export type ServerRole = {
+export interface ServerRole {
   id: string;
   serverId: string;
   name: string;
   position: number;
   permissions: PermissionSet;
-};
+}
 
-export type Channel = {
+export interface Channel {
   id: string;
   serverId: string;
   kind: ChannelKind;
   name: string;
   order: number;
   access: ChannelAccess;
-};
+}
 
-export type Conversation = {
+export interface Conversation {
   id: string;
   kind: "dm";
   participantIds: string[];
-};
+}
 
-export type Message = {
+export interface Message {
   id: string;
   threadType: ThreadType;
   threadId: string;
@@ -70,9 +70,9 @@ export type Message = {
   body: string;
   createdAt: number;
   editedAt?: number;
-};
+}
 
-export type VoiceState = {
+export interface VoiceState {
   userId: string;
   serverId: string;
   channelId: string;
@@ -80,12 +80,12 @@ export type VoiceState = {
   deafened: boolean;
   connectedAt: number;
   lastHeartbeatAt: number;
-};
+}
 
-export type CallRoom = {
+export interface CallRoom {
   scopeType: RoomScopeType;
   scopeId: string;
-  provider: "cloudflare-realtimekit";
-  meetingId: string;
+  provider: "cloudflare-realtime-sfu";
+  roomKey: string;
   status: "ready" | "failed";
-};
+}

@@ -21,6 +21,7 @@ import type * as lib_cloudflare from "../lib/cloudflare.js";
 import type * as lib_permissions from "../lib/permissions.js";
 import type * as lib_storage from "../lib/storage.js";
 import type * as messages from "../messages.js";
+import type * as realtimeCalls from "../realtimeCalls.js";
 import type * as roles from "../roles.js";
 import type * as servers from "../servers.js";
 import type * as storage from "../storage.js";
@@ -47,6 +48,7 @@ declare const fullApi: ApiFromModules<{
   "lib/permissions": typeof lib_permissions;
   "lib/storage": typeof lib_storage;
   messages: typeof messages;
+  realtimeCalls: typeof realtimeCalls;
   roles: typeof roles;
   servers: typeof servers;
   storage: typeof storage;

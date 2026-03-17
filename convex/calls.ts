@@ -1,14 +1,24 @@
 // @ts-nocheck
-import { action, internalMutation, mutation, query } from "./_generated/server";
-import { internal, api } from "./_generated/api";
+
 import { v } from "convex/values";
+import { api, internal } from "./_generated/api";
+import { action, internalMutation, mutation, query } from "./_generated/server";
 
 import { requireCurrentUser } from "./lib/auth";
-import { addRealtimeParticipant, createRealtimeMeeting } from "./lib/cloudflare";
+import { generateTurnIceServers } from "./lib/cloudflare";
 
-const requireConversationParticipant = async (ctx: any, conversationId: string, userId: string) => {
+const TURN_TTL_SECONDS = 60 * 60 * 4;
+
+const resolveRoomKey = (room: { roomKey?: string; scopeId: string }) =>
+  room.roomKey ?? `dm:${room.scopeId}`;
+
+const requireConversationParticipant = async (
+  ctx: any,
+  conversationId: string,
+  userId: string
+) => {
   const conversation = await ctx.db.get(conversationId);
-  if (!conversation || !conversation.participantIds.includes(userId)) {
+  if (!(conversation && conversation.participantIds.includes(userId))) {
     throw new Error("Conversation not found.");
   }
   return conversation;
@@ -20,12 +30,27 @@ export const getDmCallContext = query({
   },
   handler: async (ctx, args) => {
     const { user } = await requireCurrentUser(ctx);
-    const conversation = await requireConversationParticipant(ctx, args.conversationId, user._id);
+    const conversation = await requireConversationParticipant(
+      ctx,
+      args.conversationId,
+      user._id
+    );
     const room = await ctx.db
       .query("callRooms")
-      .withIndex("by_scope", (query) => query.eq("scopeType", "dm").eq("scopeId", args.conversationId))
+      .withIndex("by_scope", (query) =>
+        query.eq("scopeType", "dm").eq("scopeId", args.conversationId)
+      )
       .unique();
-    return { user, conversation, room };
+    const participant = room
+      ? await ctx.db
+          .query("callRoomParticipants")
+          .withIndex("by_user_callRoom", (query) =>
+            query.eq("userId", user._id).eq("callRoomId", room._id)
+          )
+          .unique()
+      : null;
+
+    return { user, conversation, participant, room };
   },
 });
 
@@ -39,7 +64,9 @@ export const startDmCall = mutation({
 
     const existing = await ctx.db
       .query("dmCallSessions")
-      .withIndex("by_conversationId", (query) => query.eq("conversationId", args.conversationId))
+      .withIndex("by_conversationId", (query) =>
+        query.eq("conversationId", args.conversationId)
+      )
       .collect();
     const active = existing.find((session) => session.status !== "ended");
 
@@ -68,7 +95,9 @@ export const endDmCall = mutation({
 
     const sessions = await ctx.db
       .query("dmCallSessions")
-      .withIndex("by_conversationId", (query) => query.eq("conversationId", args.conversationId))
+      .withIndex("by_conversationId", (query) =>
+        query.eq("conversationId", args.conversationId)
+      )
       .collect();
     const active = sessions.find((session) => session.status !== "ended");
 
@@ -97,39 +126,69 @@ export const joinDmCall = action({
       throw new Error("Unable to load DM call.");
     }
 
-    let room = joinContext.room;
-    if (!room) {
-      const meeting = await createRealtimeMeeting(`dm-${args.conversationId}`);
-      await ctx.runMutation(internal.voice.upsertCallRoom, {
-        scopeType: "dm",
+    const callRoomId = await ctx.runMutation(
+      internal.realtimeCalls.ensureCallRoom,
+      {
         scopeId: args.conversationId,
-        meetingId: meeting.id,
-      });
-      room = await ctx.runQuery(api.calls.getDmCallContext, args).then((value) => value?.room);
-    }
-
-    if (!room) {
-      throw new Error("Unable to create a DM room.");
-    }
-
-    const participant = await addRealtimeParticipant({
-      meetingId: room.meetingId,
-      displayName: current.user.displayName,
-      customParticipantId: current.user._id,
-      moderator: true,
+        scopeType: "dm",
+      }
+    );
+    const room = await ctx.runQuery(internal.realtimeCalls.getRoomById, {
+      callRoomId,
     });
-
-    await ctx.runMutation(internal.calls.markDmCallActive, {
-      conversationId: args.conversationId,
-      actorUserId: current.user._id,
-    });
+    const iceServers = await generateTurnIceServers(TURN_TTL_SECONDS);
 
     return {
-      authToken: participant.authToken,
-      participantId: participant.participantId,
-      meetingId: room.meetingId,
-      conversationId: args.conversationId,
+      callRoomId,
+      displayName: current.user.displayName,
+      iceServers,
+      moderator: true,
+      roomKey: resolveRoomKey(room),
+      selfUserId: current.user._id,
     };
+  },
+});
+
+export const connectDmCallSession = action({
+  args: {
+    conversationId: v.id("conversations"),
+    callRoomId: v.id("callRooms"),
+    localAudioMid: v.string(),
+    localAudioTrackName: v.string(),
+    offer: v.object({
+      sdp: v.string(),
+      type: v.union(v.literal("offer"), v.literal("answer")),
+    }),
+  },
+  handler: async (ctx, args) => {
+    const current = await ctx.runQuery(api.users.current, {});
+    if (!current?.user) {
+      throw new Error("Finish onboarding before joining calls.");
+    }
+
+    await ctx.runQuery(api.calls.getDmCallContext, {
+      conversationId: args.conversationId,
+    });
+
+    const result = await ctx.runAction(
+      internal.realtimeCalls.connectSessionForRoom,
+      {
+        callRoomId: args.callRoomId,
+        localAudioMid: args.localAudioMid,
+        localAudioTrackName: args.localAudioTrackName,
+        offer: args.offer,
+        scopeId: args.conversationId,
+        scopeType: "dm",
+        userId: current.user._id,
+      }
+    );
+
+    await ctx.runMutation(internal.calls.markDmCallActive, {
+      actorUserId: current.user._id,
+      conversationId: args.conversationId,
+    });
+
+    return result;
   },
 });
 
@@ -141,7 +200,9 @@ export const markDmCallActive = internalMutation({
   handler: async (ctx, args) => {
     const sessions = await ctx.db
       .query("dmCallSessions")
-      .withIndex("by_conversationId", (query) => query.eq("conversationId", args.conversationId))
+      .withIndex("by_conversationId", (query) =>
+        query.eq("conversationId", args.conversationId)
+      )
       .collect();
     const active = sessions.find((session) => session.status !== "ended");
 

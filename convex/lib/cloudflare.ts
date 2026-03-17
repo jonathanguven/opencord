@@ -1,5 +1,35 @@
-// @ts-nocheck
-const cloudflareApiBase = "https://api.cloudflare.com/client/v4";
+const cloudflareRealtimeBaseUrl = "https://rtc.live.cloudflare.com/v1";
+
+interface SessionDescription {
+  sdp: string;
+  type: "offer" | "answer";
+}
+
+interface IceServer {
+  credential?: string;
+  urls: string[];
+  username?: string;
+}
+
+interface SfuTrackDescriptor {
+  kind?: "audio" | "video";
+  location: "local" | "remote";
+  mid?: string;
+  sessionId?: string;
+  trackName?: string;
+}
+
+interface SfuTracksResponse {
+  requiresImmediateRenegotiation?: boolean;
+  sessionDescription?: SessionDescription;
+  tracks?: Array<{
+    sessionId?: string;
+    trackName?: string;
+    mid?: string;
+    errorCode?: string;
+    errorDescription?: string;
+  }>;
+}
 
 const requiredEnv = (name: string) => {
   const value = process.env[name];
@@ -9,17 +39,22 @@ const requiredEnv = (name: string) => {
   return value;
 };
 
-const realtimeConfig = () => ({
-  accountId: requiredEnv("CLOUDFLARE_ACCOUNT_ID"),
-  appId: requiredEnv("CLOUDFLARE_REALTIME_APP_ID"),
-  apiToken: requiredEnv("CLOUDFLARE_REALTIME_TOKEN"),
-  memberPreset: requiredEnv("CLOUDFLARE_REALTIME_MEMBER_PRESET"),
-  moderatorPreset: requiredEnv("CLOUDFLARE_REALTIME_MODERATOR_PRESET"),
+const sfuConfig = () => ({
+  appId: requiredEnv("CLOUDFLARE_SFU_APP_ID"),
+  apiToken: requiredEnv("CLOUDFLARE_SFU_API_TOKEN"),
 });
 
-const realtimeRequest = async <T>(path: string, init?: RequestInit): Promise<T> => {
-  const { apiToken } = realtimeConfig();
-  const response = await fetch(`${cloudflareApiBase}${path}`, {
+const turnConfig = () => ({
+  keyId: requiredEnv("CLOUDFLARE_TURN_KEY_ID"),
+  apiToken: requiredEnv("CLOUDFLARE_TURN_API_TOKEN"),
+});
+
+const realtimeRequest = async <T>(
+  path: string,
+  apiToken: string,
+  init?: RequestInit
+): Promise<T> => {
+  const response = await fetch(`${cloudflareRealtimeBaseUrl}${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",
@@ -28,79 +63,179 @@ const realtimeRequest = async <T>(path: string, init?: RequestInit): Promise<T> 
     },
   });
 
+  const payload = await response.json().catch(() => null);
+
   if (!response.ok) {
-    throw new Error(`Cloudflare Realtime request failed: ${response.status}`);
+    const message =
+      payload?.errorDescription ??
+      payload?.errors?.[0]?.message ??
+      payload?.message ??
+      response.statusText;
+    throw new Error(
+      `Cloudflare Realtime request failed for ${path}: ${response.status}${message ? ` (${message})` : ""}`
+    );
   }
 
-  const payload = await response.json();
-  if (payload.success === false) {
-    throw new Error(payload.errors?.[0]?.message ?? "Cloudflare Realtime error");
+  if (payload?.errorCode) {
+    throw new Error(
+      payload.errorDescription ??
+        `Cloudflare Realtime error: ${payload.errorCode}`
+    );
   }
 
   return payload;
 };
 
-export const createRealtimeMeeting = async (title: string) => {
-  const { accountId, appId } = realtimeConfig();
-  const response = await realtimeRequest<{
-    result: {
-      id: string;
-      title: string;
-    };
-  }>(`/accounts/${accountId}/realtime/kit/${appId}/meetings`, {
-    method: "POST",
-    body: JSON.stringify({ title }),
-  });
+export const createSfuSession = (params?: {
+  sessionDescription?: SessionDescription;
+  correlationId?: string;
+}) => {
+  const { appId, apiToken } = sfuConfig();
+  const query = params?.correlationId
+    ? `?correlationId=${encodeURIComponent(params.correlationId)}`
+    : "";
+  const body = params?.sessionDescription
+    ? JSON.stringify({ sessionDescription: params.sessionDescription })
+    : undefined;
 
-  return response.result;
+  return realtimeRequest<{
+    sessionId: string;
+    sessionDescription?: SessionDescription;
+  }>(`/apps/${appId}/sessions/new${query}`, apiToken, {
+    method: "POST",
+    body,
+  });
 };
 
-export const addRealtimeParticipant = async (params: {
-  meetingId: string;
-  displayName: string;
-  customParticipantId: string;
-  moderator: boolean;
+export const publishLocalTracks = (params: {
+  sessionId: string;
+  sessionDescription: SessionDescription;
+  tracks: SfuTrackDescriptor[];
 }) => {
-  const { accountId, appId, memberPreset, moderatorPreset } = realtimeConfig();
-  const response = await realtimeRequest<{
-    result: {
-      id: string;
-      authToken: string;
-      token?: string;
-    };
-  }>(`/accounts/${accountId}/realtime/kit/${appId}/meetings/${params.meetingId}/participants`, {
-    method: "POST",
-    body: JSON.stringify({
-      name: params.displayName,
-      preset_name: params.moderator ? moderatorPreset : memberPreset,
-      custom_participant_id: params.customParticipantId,
-    }),
-  });
-
-  return {
-    participantId: response.result.id,
-    authToken: response.result.authToken ?? response.result.token,
-  };
-};
-
-export const refreshRealtimeParticipantToken = async (params: {
-  meetingId: string;
-  participantId: string;
-}) => {
-  const { accountId, appId } = realtimeConfig();
-  const response = await realtimeRequest<{
-    result?: {
-      token: string;
-    };
-    data?: {
-      token: string;
-    };
-  }>(
-    `/accounts/${accountId}/realtime/kit/${appId}/meetings/${params.meetingId}/participants/${params.participantId}/token`,
+  const { appId, apiToken } = sfuConfig();
+  return realtimeRequest<SfuTracksResponse>(
+    `/apps/${appId}/sessions/${params.sessionId}/tracks/new`,
+    apiToken,
     {
       method: "POST",
-    },
+      body: JSON.stringify({
+        sessionDescription: params.sessionDescription,
+        tracks: params.tracks,
+      }),
+    }
+  );
+};
+
+export const pullRemoteTracks = (params: {
+  sessionId: string;
+  tracks: SfuTrackDescriptor[];
+  sessionDescription?: SessionDescription;
+}) => {
+  const { appId, apiToken } = sfuConfig();
+  return realtimeRequest<SfuTracksResponse>(
+    `/apps/${appId}/sessions/${params.sessionId}/tracks/new`,
+    apiToken,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        tracks: params.tracks,
+        ...(params.sessionDescription
+          ? { sessionDescription: params.sessionDescription }
+          : {}),
+      }),
+    }
+  );
+};
+
+export const renegotiateSfuSession = (params: {
+  sessionId: string;
+  sessionDescription: SessionDescription;
+}) => {
+  const { appId, apiToken } = sfuConfig();
+  return realtimeRequest<{ sessionDescription?: SessionDescription }>(
+    `/apps/${appId}/sessions/${params.sessionId}/renegotiate`,
+    apiToken,
+    {
+      method: "PUT",
+      body: JSON.stringify({
+        sessionDescription: params.sessionDescription,
+      }),
+    }
+  );
+};
+
+export const closeSfuTracks = (params: {
+  sessionId: string;
+  tracks: Array<{ mid?: string }>;
+  sessionDescription?: SessionDescription;
+  force?: boolean;
+}) => {
+  const { appId, apiToken } = sfuConfig();
+  return realtimeRequest<SfuTracksResponse>(
+    `/apps/${appId}/sessions/${params.sessionId}/tracks/close`,
+    apiToken,
+    {
+      method: "PUT",
+      body: JSON.stringify({
+        tracks: params.tracks,
+        force: params.force ?? false,
+        ...(params.sessionDescription
+          ? { sessionDescription: params.sessionDescription }
+          : {}),
+      }),
+    }
+  );
+};
+
+export const getSessionState = (sessionId: string) => {
+  const { appId, apiToken } = sfuConfig();
+  return realtimeRequest<{
+    tracks?: Array<{
+      location?: "local" | "remote";
+      mid?: string;
+      trackName?: string;
+      sessionId?: string;
+    }>;
+  }>(`/apps/${appId}/sessions/${sessionId}`, apiToken, {
+    method: "GET",
+  });
+};
+
+const isBrowserSafeTurnUrl = (url: string) => !url.includes(":53");
+
+export const generateTurnIceServers = async (ttlSeconds: number) => {
+  const { keyId, apiToken } = turnConfig();
+  const payload = await realtimeRequest<{ iceServers?: IceServer[] }>(
+    `/turn/keys/${keyId}/credentials/generate-ice-servers`,
+    apiToken,
+    {
+      method: "POST",
+      body: JSON.stringify({ ttl: ttlSeconds }),
+    }
   );
 
-  return response.result?.token ?? response.data?.token;
+  const cloudflareStunServers: IceServer[] = [
+    {
+      urls: ["stun:stun.cloudflare.com:3478"],
+    },
+  ];
+
+  const turnServers =
+    payload.iceServers?.flatMap((server) => {
+      const urls = server.urls.filter(isBrowserSafeTurnUrl);
+      if (urls.length === 0) {
+        return [];
+      }
+
+      return [
+        {
+          ...server,
+          urls,
+        },
+      ];
+    }) ?? [];
+
+  return [...cloudflareStunServers, ...turnServers];
 };
+
+export type { IceServer, SessionDescription };
