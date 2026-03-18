@@ -112,14 +112,16 @@ function WorkspaceScreenLayout() {
                   <WorkspaceMainContent />
                 </div>
 
-                <CallTray
-                  activeCall={call.activeCall}
-                  isConnecting={call.isCallConnecting}
-                  onDeafen={call.toggleDeafen}
-                  onLeave={call.leaveActiveCall}
-                  onMute={call.toggleMute}
-                  onShareScreen={call.triggerShareScreen}
-                />
+                {call.activeCall?.kind === "voice" ? (
+                  <CallTray
+                    activeCall={call.activeCall}
+                    isConnecting={call.isCallConnecting}
+                    onDeafen={call.toggleDeafen}
+                    onLeave={call.leaveActiveCall}
+                    onMute={call.toggleMute}
+                    onShareScreen={call.triggerShareScreen}
+                  />
+                ) : null}
               </main>
             </ResizablePanel>
           </ResizablePanelGroup>

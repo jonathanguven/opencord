@@ -1,5 +1,4 @@
 import {
-  AudioLinesIcon,
   MicIcon,
   MicOffIcon,
   MonitorUpIcon,
@@ -7,7 +6,6 @@ import {
   VolumeXIcon,
 } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { ActiveCall } from "@/components/workspace/workspace-types";
 
@@ -29,17 +27,7 @@ export function CallTray({
   onShareScreen,
 }: CallTrayProps) {
   if (!activeCall) {
-    return (
-      <div className="border-border/60 border-t px-4 py-3">
-        <div className="flex items-center justify-between rounded-2xl border border-border/70 border-dashed bg-muted/20 px-4 py-3 text-muted-foreground text-sm">
-          <div className="flex items-center gap-2">
-            <AudioLinesIcon />
-            No active call. Join a voice room or start a DM session.
-          </div>
-          <Badge variant="outline">Idle</Badge>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (

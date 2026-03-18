@@ -16,6 +16,20 @@ export function WorkspaceHeader() {
   const view = useWorkspaceView();
   const ui = useWorkspaceUi();
   const call = useWorkspaceCall();
+  let callActionLabel = "Start call";
+  const isInConversationCall =
+    view.activeConversation?._id &&
+    call.activeCall?.kind === "dm" &&
+    call.activeCall.conversationId === view.activeConversation._id;
+  const hasActiveConversationCall = Boolean(
+    view.activeConversation?.activeCall
+  );
+
+  if (isInConversationCall) {
+    callActionLabel = call.isCallConnecting ? "Cancel" : "Leave call";
+  } else if (hasActiveConversationCall) {
+    callActionLabel = "Join call";
+  }
   let rightSidebarLabel = ui.isRightSidebarCollapsed
     ? "Show Member List"
     : "Hide Member List";
@@ -40,9 +54,16 @@ export function WorkspaceHeader() {
       </div>
       <div className="flex shrink-0 items-center gap-2">
         {view.isFriendsView && view.activeConversation ? (
-          <Button onClick={call.startConversationCall} variant="outline">
+          <Button
+            onClick={
+              isInConversationCall
+                ? call.leaveActiveCall
+                : call.startConversationCall
+            }
+            variant="outline"
+          >
             <AudioLinesIcon data-icon="inline-start" />
-            Start call
+            {callActionLabel}
           </Button>
         ) : null}
         {view.canCreateServerInvites ? (
