@@ -28,6 +28,7 @@ import {
   getChannelPath,
   getDmPath,
   getServerPath,
+  parseInviteCode,
   resolvePermissions,
   resolveServerLandingChannel,
   setLastVisitedChannel,
@@ -38,6 +39,7 @@ import { defaultPermissionSet } from "../../shared/domain";
 
 type ChannelKind = Doc<"channels">["kind"];
 type ChannelAccess = Doc<"channels">["access"];
+type ServerDialogMode = "create" | "join";
 
 const DEFAULT_INVITE_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000;
 const CHANNELS_PATH = "/channels";
@@ -184,6 +186,7 @@ export function useWorkspaceScreenController() {
 
   const bootstrapUser = useMutation(api.users.bootstrap);
   const createServer = useMutation(api.servers.create);
+  const redeemInvite = useMutation(api.invites.redeem);
   const getOrCreateConversation = useMutation(
     api.conversations.getOrCreateByFriend
   );
@@ -219,8 +222,14 @@ export function useWorkspaceScreenController() {
   const [handleDraft, setHandleDraft] = useState("");
   const [handleError, setHandleError] = useState<string | null>(null);
   const [isCreateServerOpen, setIsCreateServerOpen] = useState(false);
+  const [serverDialogMode, setServerDialogMode] =
+    useState<ServerDialogMode>("create");
   const [serverNameDraft, setServerNameDraft] = useState("");
   const [serverDescriptionDraft, setServerDescriptionDraft] = useState("");
+  const [joinServerInviteDraft, setJoinServerInviteDraft] = useState("");
+  const [joinServerInviteError, setJoinServerInviteError] = useState<
+    string | null
+  >(null);
   const [friendHandleDraft, setFriendHandleDraft] = useState("");
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false);
@@ -455,6 +464,16 @@ export function useWorkspaceScreenController() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  useEffect(() => {
+    if (isCreateServerOpen) {
+      return;
+    }
+
+    setServerDialogMode("create");
+    setJoinServerInviteDraft("");
+    setJoinServerInviteError(null);
+  }, [isCreateServerOpen]);
+
   const moveToChannel = async (targetChannelId: Id<"channels">) => {
     const targetChannel =
       activeCallWorkspace?.channels.find(
@@ -530,6 +549,37 @@ export function useWorkspaceScreenController() {
       toast.success("Server created.");
     } catch (error) {
       toast.error(getErrorMessage(error));
+    }
+  };
+
+  const submitJoinServer = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const inviteCode = parseInviteCode(joinServerInviteDraft);
+
+    if (!joinServerInviteDraft.trim()) {
+      setJoinServerInviteError("Enter an invite code or invite link.");
+      return;
+    }
+
+    if (!inviteCode) {
+      setJoinServerInviteError("Enter a valid OpenCord invite code or link.");
+      return;
+    }
+
+    setJoinServerInviteError(null);
+
+    try {
+      const serverId = await redeemInvite({ code: inviteCode });
+      setIsCreateServerOpen(false);
+      setServerDialogMode("create");
+      setJoinServerInviteDraft("");
+      setJoinServerInviteError(null);
+      navigate(getServerPath(serverId));
+      toast.success("Server joined.");
+    } catch (error) {
+      const message = getErrorMessage(error);
+      setJoinServerInviteError(message);
+      toast.error(message);
     }
   };
 
@@ -1005,6 +1055,8 @@ export function useWorkspaceScreenController() {
     isLeftSidebarCollapsed,
     isRightSidebarCollapsed,
     joinVoiceChannel,
+    joinServerInviteDraft,
+    joinServerInviteError,
     leaveActiveCall,
     leftSidebarRef,
     messageDraft,
@@ -1021,6 +1073,7 @@ export function useWorkspaceScreenController() {
     sendActiveMessage,
     setEditingMessageDraft,
     serverDescriptionDraft,
+    serverDialogMode,
     serverNameDraft,
     servers,
     setChannelAccessDraft,
@@ -1035,7 +1088,10 @@ export function useWorkspaceScreenController() {
     setIsInviteOpen,
     setIsLeftSidebarCollapsed,
     setIsRightSidebarCollapsed,
+    setJoinServerInviteDraft,
+    setJoinServerInviteError,
     setMessageDraft,
+    setServerDialogMode,
     setServerDescriptionDraft,
     setServerNameDraft,
     showAddFriendTab,
@@ -1044,6 +1100,7 @@ export function useWorkspaceScreenController() {
     submitCreateChannel,
     submitCreateServer,
     submitFriendRequest,
+    submitJoinServer,
     submitOnboarding,
     textChannels,
     toggleDeafen,

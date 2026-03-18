@@ -65,17 +65,24 @@ type WorkspaceDialogsContextValue = Pick<
   | "handleError"
   | "openCreateChannel"
   | "reorderChannelSection"
+  | "joinServerInviteDraft"
+  | "joinServerInviteError"
   | "serverDescriptionDraft"
+  | "serverDialogMode"
   | "serverNameDraft"
   | "setChannelAccessDraft"
   | "setChannelKindDraft"
   | "setChannelNameDraft"
   | "setDisplayNameDraft"
   | "setHandleDraft"
+  | "setJoinServerInviteDraft"
+  | "setJoinServerInviteError"
+  | "setServerDialogMode"
   | "setServerDescriptionDraft"
   | "setServerNameDraft"
   | "submitCreateChannel"
   | "submitCreateServer"
+  | "submitJoinServer"
   | "submitOnboarding"
 >;
 
@@ -203,6 +210,8 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
     isLeftSidebarCollapsed,
     isRightSidebarCollapsed,
     joinVoiceChannel,
+    joinServerInviteDraft,
+    joinServerInviteError,
     leaveActiveCall,
     leftSidebarRef,
     messageDraft,
@@ -219,6 +228,7 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
     sendActiveMessage,
     setEditingMessageDraft,
     serverDescriptionDraft,
+    serverDialogMode,
     serverNameDraft,
     servers,
     setChannelAccessDraft,
@@ -233,7 +243,10 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
     setIsInviteOpen,
     setIsLeftSidebarCollapsed,
     setIsRightSidebarCollapsed,
+    setJoinServerInviteDraft,
+    setJoinServerInviteError,
     setMessageDraft,
+    setServerDialogMode,
     setServerDescriptionDraft,
     setServerNameDraft,
     showAddFriendTab,
@@ -242,6 +255,7 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
     submitCreateChannel,
     submitCreateServer,
     submitFriendRequest,
+    submitJoinServer,
     submitOnboarding,
     textChannels,
     toggleDeafen,
@@ -350,17 +364,24 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
       handleError,
       openCreateChannel,
       reorderChannelSection,
+      joinServerInviteDraft,
+      joinServerInviteError,
       serverDescriptionDraft,
+      serverDialogMode,
       serverNameDraft,
       setChannelAccessDraft,
       setChannelKindDraft,
       setChannelNameDraft,
       setDisplayNameDraft,
       setHandleDraft,
+      setJoinServerInviteDraft,
+      setJoinServerInviteError,
+      setServerDialogMode,
       setServerDescriptionDraft,
       setServerNameDraft,
       submitCreateChannel,
       submitCreateServer,
+      submitJoinServer,
       submitOnboarding,
     }),
     [
@@ -374,17 +395,24 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
       handleError,
       openCreateChannel,
       reorderChannelSection,
+      joinServerInviteDraft,
+      joinServerInviteError,
       serverDescriptionDraft,
+      serverDialogMode,
       serverNameDraft,
       setChannelAccessDraft,
       setChannelKindDraft,
       setChannelNameDraft,
       setDisplayNameDraft,
       setHandleDraft,
+      setJoinServerInviteDraft,
+      setJoinServerInviteError,
+      setServerDialogMode,
       setServerDescriptionDraft,
       setServerNameDraft,
       submitCreateChannel,
       submitCreateServer,
+      submitJoinServer,
       submitOnboarding,
     ]
   );

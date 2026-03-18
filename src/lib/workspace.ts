@@ -5,6 +5,8 @@ import { mergePermissionSets } from "../../shared/permissions";
 
 const CHANNELS_PATH = "/channels";
 const LAST_CHANNEL_STORAGE_KEY_PREFIX = "opencord:last-channel:";
+const INVITE_CODE_PATTERN = /^[A-Za-z0-9-]+$/;
+const INVITE_PATH_PATTERN = /^\/invite\/([A-Za-z0-9-]+)\/?$/;
 
 export function getDmPath(conversationId: Id<"conversations">) {
   return `${CHANNELS_PATH}/dm/${conversationId}`;
@@ -70,6 +72,30 @@ export function buildInviteLink(code: string) {
   }
 
   return new URL(`/invite/${code}`, window.location.origin).toString();
+}
+
+export function parseInviteCode(input: string) {
+  const normalizedValue = input.trim();
+  if (!normalizedValue) {
+    return null;
+  }
+
+  if (!(normalizedValue.includes("://") || normalizedValue.startsWith("/"))) {
+    return INVITE_CODE_PATTERN.test(normalizedValue) ? normalizedValue : null;
+  }
+
+  try {
+    const origin =
+      typeof window === "undefined"
+        ? "https://opencord.app"
+        : window.location.origin;
+    const inviteUrl = new URL(normalizedValue, origin);
+    const invitePathMatch = inviteUrl.pathname.match(INVITE_PATH_PATTERN);
+
+    return invitePathMatch?.[1] ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export function resolvePermissions(workspace: WorkspaceResult) {

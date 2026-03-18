@@ -56,11 +56,20 @@ function WorkspaceScreenLayout() {
 
       <CreateServerDialog
         description={dialogs.serverDescriptionDraft}
+        joinInviteCode={dialogs.joinServerInviteDraft}
+        joinInviteError={dialogs.joinServerInviteError}
+        mode={dialogs.serverDialogMode}
         name={dialogs.serverNameDraft}
         onDescriptionChange={dialogs.setServerDescriptionDraft}
+        onJoinInviteChange={(value) => {
+          dialogs.setJoinServerInviteDraft(value);
+          dialogs.setJoinServerInviteError(null);
+        }}
         onNameChange={dialogs.setServerNameDraft}
         onOpenChange={ui.setIsCreateServerOpen}
-        onSubmit={dialogs.submitCreateServer}
+        onSubmitCreate={dialogs.submitCreateServer}
+        onSubmitJoin={dialogs.submitJoinServer}
+        onToggleMode={dialogs.setServerDialogMode}
         open={ui.isCreateServerOpen}
       />
 

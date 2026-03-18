@@ -1,6 +1,14 @@
-import { HashIcon, LockIcon, Volume2Icon } from "lucide-react";
+import {
+  ArrowRightIcon,
+  CompassIcon,
+  HashIcon,
+  Volume2Icon,
+  LockIcon,
+} from "lucide-react";
 import type { FormEvent } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogClose,
@@ -119,62 +127,190 @@ export function OnboardingDialog({
 
 interface CreateServerDialogProps {
   description: string;
+  joinInviteCode: string;
+  joinInviteError: string | null;
+  mode: "create" | "join";
   name: string;
   onDescriptionChange: (value: string) => void;
+  onJoinInviteChange: (value: string) => void;
   onNameChange: (value: string) => void;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onSubmitCreate: (event: FormEvent<HTMLFormElement>) => void;
+  onSubmitJoin: (event: FormEvent<HTMLFormElement>) => void;
+  onToggleMode: (mode: "create" | "join") => void;
   open: boolean;
 }
 
 export function CreateServerDialog({
   description,
+  joinInviteCode,
+  joinInviteError,
+  mode,
   name,
   onDescriptionChange,
+  onJoinInviteChange,
   onNameChange,
   onOpenChange,
-  onSubmit,
+  onSubmitCreate,
+  onSubmitJoin,
+  onToggleMode,
   open,
 }: CreateServerDialogProps) {
+  const inviteExamples = [
+    "hTKzmak",
+    "https://opencord.app/invite/hTKzmak",
+    "/invite/hTKzmak",
+  ] as const;
+
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Create a new server</DialogTitle>
-          <DialogDescription>
-            Start with a flat `#general` text channel and a `lounge` voice room.
-          </DialogDescription>
-        </DialogHeader>
-        <form className="flex flex-col gap-4" onSubmit={onSubmit}>
-          <FieldGroup>
-            <Field>
-              <FieldLabel htmlFor="server-name">Server name</FieldLabel>
-              <InputGroup>
-                <InputGroupInput
-                  id="server-name"
-                  onChange={(event) => onNameChange(event.target.value)}
-                  placeholder="Weekend raid squad"
-                  value={name}
-                />
-              </InputGroup>
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="server-description">Description</FieldLabel>
-              <InputGroup>
-                <InputGroupTextarea
-                  id="server-description"
-                  onChange={(event) => onDescriptionChange(event.target.value)}
-                  placeholder="Tight-knit group for late-night raids and weekend co-op."
-                  rows={4}
-                  value={description}
-                />
-              </InputGroup>
-            </Field>
-          </FieldGroup>
-          <DialogFooter>
-            <Button type="submit">Create server</Button>
-          </DialogFooter>
-        </form>
+      <DialogContent className="max-w-xl overflow-hidden p-0">
+        {mode === "create" ? (
+          <div className="flex flex-col">
+            <div className="flex flex-col gap-4 px-6 pt-6 pb-5">
+              <DialogHeader className="gap-3">
+                <DialogTitle className="text-center font-semibold text-3xl tracking-tight">
+                  Create a new server
+                </DialogTitle>
+                <DialogDescription className="text-center text-base leading-relaxed">
+                  Start with a flat `#general` text channel and a `lounge` voice
+                  room for your crew.
+                </DialogDescription>
+              </DialogHeader>
+
+              <form className="flex flex-col gap-5" onSubmit={onSubmitCreate}>
+                <FieldGroup>
+                  <Field>
+                    <FieldLabel htmlFor="server-name">Server name</FieldLabel>
+                    <InputGroup>
+                      <InputGroupInput
+                        id="server-name"
+                        onChange={(event) => onNameChange(event.target.value)}
+                        placeholder="Weekend raid squad"
+                        value={name}
+                      />
+                    </InputGroup>
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="server-description">
+                      Description
+                    </FieldLabel>
+                    <InputGroup>
+                      <InputGroupTextarea
+                        id="server-description"
+                        onChange={(event) =>
+                          onDescriptionChange(event.target.value)
+                        }
+                        placeholder="Tight-knit group for late-night raids and weekend co-op."
+                        rows={4}
+                        value={description}
+                      />
+                    </InputGroup>
+                  </Field>
+                </FieldGroup>
+
+                <Card className="border-border/60 bg-muted/20 shadow-none">
+                  <CardContent className="flex flex-col gap-3 px-5 py-5">
+                    <div className="text-center font-semibold text-3xl tracking-tight">
+                      Have an invite already?
+                    </div>
+                    <Button
+                      className="h-16 rounded-2xl font-semibold text-2xl"
+                      onClick={() => onToggleMode("join")}
+                      type="button"
+                      variant="secondary"
+                    >
+                      Join a Server
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <DialogFooter>
+                  <Button type="submit">Create server</Button>
+                </DialogFooter>
+              </form>
+            </div>
+          </div>
+        ) : (
+          <form className="flex flex-col" onSubmit={onSubmitJoin}>
+            <div className="flex flex-col gap-6 px-6 pt-6 pb-5">
+              <DialogHeader className="gap-3">
+                <DialogTitle className="text-center font-semibold text-3xl tracking-tight">
+                  Join a Server
+                </DialogTitle>
+                <DialogDescription className="text-center text-base leading-relaxed">
+                  Enter an invite below to join an existing server.
+                </DialogDescription>
+              </DialogHeader>
+
+              <Field data-invalid={Boolean(joinInviteError)}>
+                <FieldLabel htmlFor="join-server-invite">
+                  Invite link <span className="text-destructive">*</span>
+                </FieldLabel>
+                <FieldContent className="gap-3">
+                  <InputGroup>
+                    <InputGroupInput
+                      aria-invalid={Boolean(joinInviteError)}
+                      autoCapitalize="none"
+                      autoComplete="off"
+                      id="join-server-invite"
+                      onChange={(event) => {
+                        onJoinInviteChange(event.target.value);
+                      }}
+                      placeholder="https://opencord.app/invite/hTKzmak"
+                      spellCheck={false}
+                      value={joinInviteCode}
+                    />
+                  </InputGroup>
+                  <FieldDescription>Invites should look like</FieldDescription>
+                  <div className="flex flex-wrap gap-2">
+                    {inviteExamples.map((example) => (
+                      <Badge
+                        className="rounded-xl px-3 py-1.5 font-medium text-sm"
+                        key={example}
+                        variant="outline"
+                      >
+                        {example}
+                      </Badge>
+                    ))}
+                  </div>
+                  <FieldError>{joinInviteError}</FieldError>
+                </FieldContent>
+              </Field>
+
+              <Card className="border-border/60 bg-muted/30 shadow-none">
+                <CardContent className="flex items-center gap-4 px-4 py-4">
+                  <div className="flex size-14 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400">
+                    <CompassIcon className="size-6" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold text-2xl tracking-tight">
+                      Don't have an invite?
+                    </div>
+                    <p className="text-base text-muted-foreground leading-relaxed">
+                      Server discovery is not available in OpenCord yet, so ask
+                      a member to share an invite code with you.
+                    </p>
+                  </div>
+                  <ArrowRightIcon className="text-muted-foreground" />
+                </CardContent>
+              </Card>
+            </div>
+
+            <DialogFooter className="justify-between sm:justify-between">
+              <Button
+                onClick={() => onToggleMode("create")}
+                type="button"
+                variant="ghost"
+              >
+                Back
+              </Button>
+              <Button disabled={!joinInviteCode.trim()} type="submit">
+                Join Server
+              </Button>
+            </DialogFooter>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );
