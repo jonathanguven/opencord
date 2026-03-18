@@ -43,7 +43,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { WorkspaceCommandPalette } from "@/components/workspace/workspace-command-palette";
+import { WorkspaceCommandPaletteTrigger } from "@/components/workspace/workspace-command-palette";
 import {
   useWorkspaceDialogs,
   useWorkspaceFriends,
@@ -196,7 +196,7 @@ export function WorkspaceSidebar() {
     <aside className="flex h-full flex-col border-sidebar-border border-r bg-sidebar text-sidebar-foreground">
       {view.isFriendsView ? (
         <div className="border-sidebar-border border-b p-3">
-          <WorkspaceCommandPalette />
+          <WorkspaceCommandPaletteTrigger />
         </div>
       ) : null}
 

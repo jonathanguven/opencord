@@ -5,6 +5,7 @@ import {
 } from "@/components/ui/resizable";
 import { CallTray } from "@/components/workspace/call-tray";
 import { InviteDialog } from "@/components/workspace/invite-dialog";
+import { WorkspaceCommandPalette } from "@/components/workspace/workspace-command-palette";
 import {
   CreateChannelDialog,
   CreateServerDialog,
@@ -85,6 +86,8 @@ function WorkspaceScreenLayout() {
         onSubmit={dialogs.submitCreateChannel}
         open={ui.isCreateChannelOpen}
       />
+
+      <WorkspaceCommandPalette />
 
       <WorkspaceRail />
 

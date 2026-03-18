@@ -19,12 +19,13 @@ import {
   useWorkspaceView,
 } from "@/components/workspace/workspace-screen-context";
 import type { WorkspaceResult } from "@/components/workspace/workspace-types";
-import { getChannelDisplayName } from "@/lib/channel-name";
+import { getChannelNameText } from "@/lib/channel-name";
 import { getDisplayName, getInitials } from "@/lib/presentation";
 import { getChannelPath, getDmPath } from "@/lib/workspace";
 import { api } from "../../../convex/_generated/api";
 
 const RECENT_SEARCHES_STORAGE_KEY = "opencord:command-palette-recents";
+const OPEN_COMMAND_PALETTE_EVENT = "opencord:open-command-palette";
 const MAX_RECENT_SEARCHES = 30;
 const DEFAULT_RECENT_RESULTS = 7;
 const MAX_VISIBLE_RESULTS = 10;
@@ -151,7 +152,7 @@ export function WorkspaceCommandPalette() {
         return workspace.channels.map((channel) => ({
           id: `channel:${channel._id}`,
           kind: channel.kind,
-          label: getChannelDisplayName(channel),
+          label: getChannelNameText(channel),
           path: getChannelPath(channel.serverId, channel._id),
           searchText: `${channel.name} ${serverName} ${channel.kind} ${channel.access} channel`,
           serverName,
@@ -229,6 +230,10 @@ export function WorkspaceCommandPalette() {
   };
 
   useEffect(() => {
+    const handleOpenCommandPalette = () => {
+      setOpen(true);
+    };
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!(event.metaKey || event.ctrlKey) || event.altKey) {
         return;
@@ -242,8 +247,18 @@ export function WorkspaceCommandPalette() {
       setOpen((currentValue) => !currentValue);
     };
 
+    window.addEventListener(
+      OPEN_COMMAND_PALETTE_EVENT,
+      handleOpenCommandPalette
+    );
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener(
+        OPEN_COMMAND_PALETTE_EVENT,
+        handleOpenCommandPalette
+      );
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
   useEffect(() => {
@@ -254,80 +269,89 @@ export function WorkspaceCommandPalette() {
   }, [open]);
 
   useEffect(() => {
-    if (!view.activeConversation) {
+    const activeConversationId = view.activeConversation?._id;
+
+    if (!activeConversationId) {
       return;
     }
 
-    trackRecentSearch(`dm:${view.activeConversation._id}`);
+    trackRecentSearch(`dm:${activeConversationId}`);
     setRecentItems(readRecentSearches());
-  }, [view.activeConversation]);
+  }, [view.activeConversation?._id]);
 
   useEffect(() => {
-    if (!(view.activeChannel && view.activeServer)) {
+    const activeChannelId = view.activeChannel?._id;
+    const activeServerId = view.activeServer?._id;
+
+    if (!(activeChannelId && activeServerId)) {
       return;
     }
 
-    trackRecentSearch(`channel:${view.activeChannel._id}`);
+    trackRecentSearch(`channel:${activeChannelId}`);
     setRecentItems(readRecentSearches());
-  }, [view.activeChannel, view.activeServer]);
+  }, [view.activeChannel?._id, view.activeServer?._id]);
 
   return (
-    <>
-      <button
-        className="flex h-10 w-full items-center gap-2 rounded-xl border border-sidebar-border bg-input px-3 text-left font-medium text-muted-foreground text-sm shadow-[inset_0_1px_0_rgb(255_255_255_/_0.03)] transition-colors hover:border-ring/30 hover:text-foreground"
-        onClick={() => setOpen(true)}
-        type="button"
+    <CommandDialog
+      className="border-sidebar-border bg-popover sm:max-w-2xl"
+      description="Client-side fuzzy search across your loaded DMs and channels."
+      onOpenChange={setOpen}
+      open={open}
+      title="Find conversations and channels"
+    >
+      <Command
+        className="bg-popover text-popover-foreground"
+        shouldFilter={false}
       >
-        <SearchIcon className="size-4 shrink-0 text-muted-foreground" />
-        <span className="flex-1 truncate">Find conversation or channel</span>
-      </button>
+        <CommandInput
+          className="placeholder:text-muted-foreground"
+          onValueChange={setQuery}
+          placeholder="Search DMs, text channels, voice channels..."
+          value={query}
+        />
+        <CommandList className="max-h-96">
+          {searchResults.length ? null : (
+            <CommandEmpty>No conversations or channels found.</CommandEmpty>
+          )}
+          {showRecentResults ? (
+            <CommandGroup heading="Recent">
+              {recentResults.map((item) => (
+                <PaletteItem item={item} key={item.id} onSelect={openItem} />
+              ))}
+            </CommandGroup>
+          ) : null}
+          {hasQuery && dmResults.length ? (
+            <CommandGroup heading="Direct Messages">
+              {dmResults.map((item) => (
+                <PaletteItem item={item} key={item.id} onSelect={openItem} />
+              ))}
+            </CommandGroup>
+          ) : null}
+          {hasQuery && channelResults.length ? (
+            <CommandGroup heading="Channels">
+              {channelResults.map((item) => (
+                <PaletteItem item={item} key={item.id} onSelect={openItem} />
+              ))}
+            </CommandGroup>
+          ) : null}
+        </CommandList>
+      </Command>
+    </CommandDialog>
+  );
+}
 
-      <CommandDialog
-        className="border-sidebar-border bg-popover sm:max-w-2xl"
-        description="Client-side fuzzy search across your loaded DMs and channels."
-        onOpenChange={setOpen}
-        open={open}
-        title="Find conversations and channels"
-      >
-        <Command
-          className="bg-popover text-popover-foreground"
-          shouldFilter={false}
-        >
-          <CommandInput
-            className="placeholder:text-muted-foreground"
-            onValueChange={setQuery}
-            placeholder="Search DMs, text channels, voice channels..."
-            value={query}
-          />
-          <CommandList className="max-h-96">
-            {searchResults.length ? null : (
-              <CommandEmpty>No conversations or channels found.</CommandEmpty>
-            )}
-            {showRecentResults ? (
-              <CommandGroup heading="Recent">
-                {recentResults.map((item) => (
-                  <PaletteItem item={item} key={item.id} onSelect={openItem} />
-                ))}
-              </CommandGroup>
-            ) : null}
-            {hasQuery && dmResults.length ? (
-              <CommandGroup heading="Direct Messages">
-                {dmResults.map((item) => (
-                  <PaletteItem item={item} key={item.id} onSelect={openItem} />
-                ))}
-              </CommandGroup>
-            ) : null}
-            {hasQuery && channelResults.length ? (
-              <CommandGroup heading="Channels">
-                {channelResults.map((item) => (
-                  <PaletteItem item={item} key={item.id} onSelect={openItem} />
-                ))}
-              </CommandGroup>
-            ) : null}
-          </CommandList>
-        </Command>
-      </CommandDialog>
-    </>
+export function WorkspaceCommandPaletteTrigger() {
+  return (
+    <button
+      className="flex h-10 w-full items-center gap-2 rounded-xl border border-sidebar-border bg-input px-3 text-left font-medium text-muted-foreground text-sm shadow-[inset_0_1px_0_rgb(255_255_255_/_0.03)] transition-colors hover:border-ring/30 hover:text-foreground"
+      onClick={() =>
+        window.dispatchEvent(new Event(OPEN_COMMAND_PALETTE_EVENT))
+      }
+      type="button"
+    >
+      <SearchIcon className="size-4 shrink-0 text-muted-foreground" />
+      <span className="flex-1 truncate">Find conversation or channel</span>
+    </button>
   );
 }
 
