@@ -1,5 +1,3 @@
-import { AudioLinesIcon } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -43,6 +41,43 @@ export function WorkspaceHeader() {
       : "Hide User Profile";
   }
 
+  let callActionButton: React.ReactNode = null;
+
+  if (view.isFriendsView && view.activeConversation) {
+    if (callActionLabel === "Start call") {
+      callActionButton = (
+        <Tooltip>
+          <TooltipTrigger
+            aria-label="start voice call"
+            onClick={call.startConversationCall}
+            render={
+              <button
+                className="inline-flex size-7 items-center justify-center rounded-[min(var(--radius-md),12px)] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                type="button"
+              />
+            }
+          >
+            <StartVoiceCallIcon />
+          </TooltipTrigger>
+          <TooltipContent>start voice call</TooltipContent>
+        </Tooltip>
+      );
+    } else {
+      callActionButton = (
+        <Button
+          onClick={
+            isInConversationCall
+              ? call.leaveActiveCall
+              : call.startConversationCall
+          }
+          variant="outline"
+        >
+          {callActionLabel}
+        </Button>
+      );
+    }
+  }
+
   return (
     <header className="flex items-center justify-between gap-3 border-border/60 border-b px-3 py-2">
       <div className="flex min-w-0 items-start gap-2">
@@ -65,19 +100,7 @@ export function WorkspaceHeader() {
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-2">
-        {view.isFriendsView && view.activeConversation ? (
-          <Button
-            onClick={
-              isInConversationCall
-                ? call.leaveActiveCall
-                : call.startConversationCall
-            }
-            variant="outline"
-          >
-            <AudioLinesIcon data-icon="inline-start" />
-            {callActionLabel}
-          </Button>
-        ) : null}
+        {callActionButton}
         <Tooltip>
           <TooltipTrigger
             onClick={ui.toggleRightSidebar}
@@ -94,6 +117,28 @@ export function WorkspaceHeader() {
         </Tooltip>
       </div>
     </header>
+  );
+}
+
+function StartVoiceCallIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="size-5"
+      fill="none"
+      role="img"
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M2 7.4A5.4 5.4 0 0 1 7.4 2c.36 0 .7.22.83.55l1.93 4.64a1 1 0 0 1-.43 1.25L7 10a8.52 8.52 0 0 0 7 7l1.12-2.24a1 1 0 0 1 1.19-.51l5.06 1.56c.38.11.63.46.63.85C22 19.6 19.6 22 16.66 22h-.37C8.39 22 2 15.6 2 7.71V7.4ZM13 3a1 1 0 0 1 1-1 8 8 0 0 1 8 8 1 1 0 1 1-2 0 6 6 0 0 0-6-6 1 1 0 0 1-1-1Z"
+        fill="currentColor"
+      />
+      <path
+        d="M13 7a1 1 0 0 1 1-1 4 4 0 0 1 4 4 1 1 0 1 1-2 0 2 2 0 0 0-2-2 1 1 0 0 1-1-1Z"
+        fill="currentColor"
+      />
+    </svg>
   );
 }
 
