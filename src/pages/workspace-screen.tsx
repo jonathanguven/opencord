@@ -66,7 +66,7 @@ function WorkspaceScreenLayout() {
 
       <InviteDialog
         activeServer={view.activeServer}
-        friends={view.friends?.friends ?? []}
+        conversations={view.conversations ?? []}
         inviteLink={view.inviteLink}
         landingChannelName={view.textChannels[0]?.name ?? "general"}
         onCopyInviteLink={dialogs.copyServerInviteLink}

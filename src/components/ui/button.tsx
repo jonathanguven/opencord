@@ -9,6 +9,8 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground [a]:hover:bg-primary/80",
+        invite:
+          "bg-[#5865f2] text-white hover:bg-[#4752c4] aria-expanded:bg-[#4752c4]",
         friend:
           "bg-[var(--friend-action)] text-[var(--friend-action-foreground)] hover:bg-[var(--friend-action-hover)]",
         outline:
