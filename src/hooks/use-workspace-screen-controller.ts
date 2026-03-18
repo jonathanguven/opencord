@@ -72,19 +72,12 @@ const toVoiceCallState = (
   serverId: session.serverId,
 });
 
-const togglePanel = (
+const expandPanel = (
   panelRef: React.RefObject<PanelImperativeHandle | null>,
-  onExpanded: () => void,
-  onCollapsed: () => void
+  onExpanded: () => void
 ) => {
-  if (panelRef.current?.isCollapsed()) {
-    panelRef.current.expand();
-    onExpanded();
-    return;
-  }
-
-  panelRef.current?.collapse();
-  onCollapsed();
+  panelRef.current?.expand();
+  onExpanded();
 };
 
 const resolveActiveThread = ({
@@ -418,19 +411,11 @@ export function useWorkspaceScreenController() {
       event.preventDefault();
 
       if (event.shiftKey) {
-        togglePanel(
-          rightSidebarRef,
-          () => setIsRightSidebarCollapsed(false),
-          () => setIsRightSidebarCollapsed(true)
-        );
+        setIsRightSidebarCollapsed((currentValue) => !currentValue);
         return;
       }
 
-      togglePanel(
-        leftSidebarRef,
-        () => setIsLeftSidebarCollapsed(false),
-        () => setIsLeftSidebarCollapsed(true)
-      );
+      expandPanel(leftSidebarRef, () => setIsLeftSidebarCollapsed(false));
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -756,19 +741,11 @@ export function useWorkspaceScreenController() {
   };
 
   const toggleLeftSidebar = () => {
-    togglePanel(
-      leftSidebarRef,
-      () => setIsLeftSidebarCollapsed(false),
-      () => setIsLeftSidebarCollapsed(true)
-    );
+    expandPanel(leftSidebarRef, () => setIsLeftSidebarCollapsed(false));
   };
 
   const toggleRightSidebar = () => {
-    togglePanel(
-      rightSidebarRef,
-      () => setIsRightSidebarCollapsed(false),
-      () => setIsRightSidebarCollapsed(true)
-    );
+    setIsRightSidebarCollapsed((currentValue) => !currentValue);
   };
 
   const acceptFriendRequest = (requestId: Id<"friendRequests">) => {

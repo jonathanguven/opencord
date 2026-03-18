@@ -86,58 +86,48 @@ function WorkspaceScreenLayout() {
       <WorkspaceRail />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <ResizablePanelGroup className="min-h-svh" orientation="horizontal">
-          <ResizablePanel
-            collapsedSize="0%"
-            collapsible
-            defaultSize="22%"
-            maxSize="26%"
-            minSize="12%"
-            onResize={(size) =>
-              ui.setIsLeftSidebarCollapsed(size.asPercentage === 0)
-            }
-            panelRef={ui.leftSidebarRef}
+        <div className="flex min-h-svh min-w-0 flex-1">
+          <ResizablePanelGroup
+            className="min-h-svh flex-1"
+            orientation="horizontal"
           >
-            <WorkspaceSidebar />
-          </ResizablePanel>
+            <ResizablePanel
+              defaultSize="22%"
+              maxSize="26%"
+              minSize="12%"
+              panelRef={ui.leftSidebarRef}
+            >
+              <WorkspaceSidebar />
+            </ResizablePanel>
 
-          <ResizableHandle withHandle />
+            <ResizableHandle />
 
-          <ResizablePanel defaultSize="58%" minSize="40%">
-            <main className="flex h-full min-w-0 flex-col bg-background">
-              <WorkspaceHeader />
+            <ResizablePanel defaultSize="78%" minSize="40%">
+              <main className="flex h-full min-w-0 flex-col bg-background">
+                <WorkspaceHeader />
 
-              <div className="min-h-0 flex-1">
-                <WorkspaceMainContent />
-              </div>
+                <div className="min-h-0 flex-1">
+                  <WorkspaceMainContent />
+                </div>
 
-              <CallTray
-                activeCall={call.activeCall}
-                isConnecting={call.isCallConnecting}
-                onDeafen={call.toggleDeafen}
-                onLeave={call.leaveActiveCall}
-                onMute={call.toggleMute}
-                onShareScreen={call.triggerShareScreen}
-              />
-            </main>
-          </ResizablePanel>
+                <CallTray
+                  activeCall={call.activeCall}
+                  isConnecting={call.isCallConnecting}
+                  onDeafen={call.toggleDeafen}
+                  onLeave={call.leaveActiveCall}
+                  onMute={call.toggleMute}
+                  onShareScreen={call.triggerShareScreen}
+                />
+              </main>
+            </ResizablePanel>
+          </ResizablePanelGroup>
 
-          <ResizableHandle withHandle />
-
-          <ResizablePanel
-            collapsedSize="0%"
-            collapsible
-            defaultSize="24%"
-            maxSize="30%"
-            minSize="14%"
-            onResize={(size) =>
-              ui.setIsRightSidebarCollapsed(size.asPercentage === 0)
-            }
-            panelRef={ui.rightSidebarRef}
-          >
-            <WorkspaceRightSidebar />
-          </ResizablePanel>
-        </ResizablePanelGroup>
+          {ui.isRightSidebarCollapsed ? null : (
+            <div className="w-[340px] shrink-0">
+              <WorkspaceRightSidebar />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
