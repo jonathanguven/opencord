@@ -61,16 +61,18 @@ export function MessageFeed({
     }
 
     return (
-      <div className="flex flex-col gap-2.5 p-3">
-        {MESSAGE_SKELETON_KEYS.map((key) => (
-          <div className="flex gap-2.5" key={key}>
-            <Skeleton className="size-9 rounded-full" />
-            <div className="flex flex-1 flex-col gap-2">
-              <Skeleton className="h-4 w-32 rounded-lg" />
-              <Skeleton className="h-14 w-full rounded-xl" />
+      <div className="flex min-h-full flex-col justify-end p-3">
+        <div className="flex flex-col gap-2.5">
+          {MESSAGE_SKELETON_KEYS.map((key) => (
+            <div className="flex gap-2.5" key={key}>
+              <Skeleton className="size-9 rounded-full" />
+              <div className="flex flex-1 flex-col gap-2">
+                <Skeleton className="h-4 w-32 rounded-lg" />
+                <Skeleton className="h-14 w-full rounded-xl" />
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     );
   }
@@ -92,33 +94,35 @@ export function MessageFeed({
   }
 
   return (
-    <div className="flex flex-col gap-2 p-3">
-      {messages.map((message) => (
-        <div
-          className="flex gap-2.5 rounded-xl border border-transparent px-1 py-1.5 hover:border-border/50 hover:bg-muted/20"
-          key={message._id}
-        >
-          <Avatar className="size-9">
-            <AvatarImage src={message.author?.avatarUrl ?? undefined} />
-            <AvatarFallback>
-              {getInitials(getDisplayName(message.author))}
-            </AvatarFallback>
-          </Avatar>
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="font-medium text-sm">
-                {getDisplayName(message.author)}
-              </span>
-              <span className="text-muted-foreground text-xs">
-                {formatTimestamp(message.createdAt)}
-              </span>
+    <div className="flex min-h-full flex-col justify-end p-3">
+      <div className="flex flex-col gap-2">
+        {messages.map((message) => (
+          <div
+            className="flex gap-2.5 rounded-xl border border-transparent px-1 py-1.5 hover:border-border/50 hover:bg-muted/20"
+            key={message._id}
+          >
+            <Avatar className="size-9">
+              <AvatarImage src={message.author?.avatarUrl ?? undefined} />
+              <AvatarFallback>
+                {getInitials(getDisplayName(message.author))}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-medium text-sm">
+                  {getDisplayName(message.author)}
+                </span>
+                <span className="text-muted-foreground text-xs">
+                  {formatTimestamp(message.createdAt)}
+                </span>
+              </div>
+              <p className="whitespace-pre-wrap text-foreground/95 text-sm leading-5">
+                {message.body}
+              </p>
             </div>
-            <p className="whitespace-pre-wrap text-foreground/95 text-sm leading-5">
-              {message.body}
-            </p>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
