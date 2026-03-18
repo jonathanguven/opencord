@@ -92,11 +92,14 @@ interface DiscordDmRowProps {
 }
 
 interface SearchCommandItem {
+  avatarUrl?: string | null;
+  handle?: string;
   id: string;
   kind: "dm" | "text" | "voice";
   label: string;
   path: string;
   searchText: string;
+  serverName?: string;
   subtitle: string;
 }
 
@@ -528,12 +531,14 @@ function WorkspaceSearchPalette() {
           const handle = conversation.otherUser?.handle ?? "";
 
           return {
+            avatarUrl: conversation.otherUser?.avatarUrl ?? null,
+            handle,
             id: `dm:${conversation._id}`,
-            kind: "dm",
+            kind: "dm" as const,
             label: displayName,
             path: getDmPath(conversation._id),
             searchText: `${displayName} ${handle} ${latestMessage} dm conversation`,
-            subtitle: latestMessage || "Direct message",
+            subtitle: "",
           };
         })
         .sort((left, right) => left.label.localeCompare(right.label)),
@@ -556,7 +561,8 @@ function WorkspaceSearchPalette() {
           label: channel.kind === "text" ? `#${channel.name}` : channel.name,
           path: getChannelPath(channel.serverId, channel._id),
           searchText: `${channel.name} ${serverName} ${channel.kind} ${channel.access} channel`,
-          subtitle: `${serverName} | ${channel.kind}`,
+          serverName,
+          subtitle: serverName,
         }));
       })
       .sort(
@@ -701,7 +707,7 @@ function WorkspaceSearchPalette() {
             placeholder="Search DMs, text channels, voice channels..."
             value={query}
           />
-          <CommandList className="max-h-[24rem]">
+          <CommandList className="max-h-96">
             {searchResults.length ? null : (
               <CommandEmpty>No conversations or channels found.</CommandEmpty>
             )}
@@ -742,13 +748,32 @@ function PaletteItem({
 }) {
   let shortcut = "Text";
   let icon = <HashIcon className="text-[#8e9297]" />;
+  let rightContent: ReactNode = <CommandShortcut>{shortcut}</CommandShortcut>;
+  let labelSuffix: ReactNode = null;
+  let subtitle = item.subtitle;
 
   if (item.kind === "dm") {
-    shortcut = "DM";
-    icon = <MessageSquareIcon className="text-[#8e9297]" />;
+    icon = (
+      <Avatar className="size-6">
+        <AvatarImage src={item.avatarUrl ?? undefined} />
+        <AvatarFallback className="bg-[#5865f2]/20 text-white">
+          {getInitials(item.label)}
+        </AvatarFallback>
+      </Avatar>
+    );
+    shortcut = item.handle ? `@${item.handle}` : "";
+    labelSuffix = shortcut ? (
+      <span className="truncate text-[#8e9297] text-xs">{shortcut}</span>
+    ) : null;
+    rightContent = null;
   } else if (item.kind === "voice") {
     shortcut = "Voice";
     icon = <Volume2Icon className="text-[#8e9297]" />;
+    rightContent = <CommandShortcut>{shortcut}</CommandShortcut>;
+  } else {
+    subtitle = "";
+    shortcut = item.serverName ?? "";
+    rightContent = <CommandShortcut>{shortcut}</CommandShortcut>;
   }
 
   return (
@@ -759,12 +784,17 @@ function PaletteItem({
     >
       {icon}
       <div className="min-w-0 flex-1">
-        <div className="truncate font-medium text-[#f2f3f5] text-sm">
-          {item.label}
+        <div className="flex items-center gap-2 truncate">
+          <span className="truncate font-medium text-[#f2f3f5] text-sm">
+            {item.label}
+          </span>
+          {labelSuffix}
         </div>
-        <div className="truncate text-[#8e9297] text-xs">{item.subtitle}</div>
+        {subtitle ? (
+          <div className="truncate text-[#8e9297] text-xs">{subtitle}</div>
+        ) : null}
       </div>
-      <CommandShortcut>{shortcut}</CommandShortcut>
+      {rightContent}
     </CommandItem>
   );
 }
