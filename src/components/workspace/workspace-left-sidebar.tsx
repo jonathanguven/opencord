@@ -73,7 +73,7 @@ const railButtonClassName =
   "size-12 rounded-[1.35rem] border border-sidebar-border bg-sidebar text-sidebar-foreground hover:bg-accent hover:text-accent-foreground";
 
 const listItemClassName =
-  "w-full justify-start gap-2.5 rounded-xl px-2.5 py-2 text-left";
+  "w-full justify-start gap-2 rounded-lg px-2 py-1.5 text-left";
 
 const VOICE_TIMER_INTERVAL_MS = 1000;
 const MAX_VISIBLE_VOICE_AVATARS = 4;
@@ -201,7 +201,7 @@ export function WorkspaceSidebar() {
   return (
     <aside className="flex h-full flex-col border-sidebar-border border-r bg-sidebar text-sidebar-foreground">
       {view.isFriendsView ? (
-        <div className="border-sidebar-border border-b p-3">
+        <div className="border-sidebar-border border-b p-2.5">
           <WorkspaceCommandPaletteTrigger />
         </div>
       ) : null}
@@ -209,10 +209,10 @@ export function WorkspaceSidebar() {
       <div className="min-h-0 flex-1">
         {view.isFriendsView ? (
           <ScrollArea className="h-full">
-            <div className="flex flex-col gap-2 p-3">
+            <div className="flex flex-col gap-1.5 p-2.5">
               <Button
                 className={cn(
-                  "h-auto w-full justify-start gap-3 rounded-2xl px-3 py-3 text-left font-semibold text-[0.95rem]",
+                  "h-auto w-full justify-start gap-2.5 rounded-xl px-2.5 py-2.5 text-left font-semibold text-[0.93rem]",
                   isFriendsHomeActive
                     ? "bg-sidebar-accent text-sidebar-accent-foreground"
                     : "text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -228,7 +228,7 @@ export function WorkspaceSidebar() {
                 <span className="truncate">Friends</span>
               </Button>
 
-              <div className="mt-3 flex items-center justify-between px-2">
+              <div className="mt-1.5 flex items-center justify-between px-1.5">
                 <div className="font-semibold text-muted-foreground text-sm">
                   Direct Messages
                 </div>
@@ -244,7 +244,7 @@ export function WorkspaceSidebar() {
                 </Button>
               </div>
 
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-0.5">
                 {view.conversations?.map((conversation) => (
                   <DiscordDmRow
                     active={view.activeConversationId === conversation._id}
@@ -279,7 +279,7 @@ export function WorkspaceSidebar() {
           </ScrollArea>
         ) : (
           <ScrollArea className="h-full">
-            <div className="flex flex-col gap-3 p-2.5">
+            <div className="flex flex-col gap-2 p-2">
               <div className="flex items-center gap-2">
                 <div className="min-w-0 flex-1">
                   <DropdownMenu>
@@ -491,7 +491,7 @@ function DiscordDmRow({
       variant="plain"
     >
       <div className="relative shrink-0">
-        <Avatar className="size-9">
+        <Avatar className="size-8">
           <AvatarImage src={avatarUrl ?? undefined} />
           <AvatarFallback className="bg-primary/20 text-primary-foreground">
             {getInitials(displayName)}
@@ -505,10 +505,12 @@ function DiscordDmRow({
         />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="truncate font-semibold text-[0.94rem]">
+        <div className="truncate font-semibold text-[0.92rem] leading-tight">
           {displayName}
         </div>
-        <div className="truncate text-muted-foreground text-xs">{subtitle}</div>
+        <div className="truncate text-muted-foreground text-xs leading-tight">
+          {subtitle}
+        </div>
       </div>
     </Button>
   );
@@ -564,9 +566,9 @@ function ChannelSection({
   };
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-center justify-between gap-2 px-2">
-        <div className="font-black text-[0.65rem] text-muted-foreground uppercase tracking-[0.16em]">
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center justify-between gap-2 px-1.5">
+        <div className="font-black text-[0.63rem] text-muted-foreground uppercase tracking-[0.14em]">
           {label}
         </div>
         {canManageChannels ? (
@@ -722,7 +724,7 @@ function ChannelRow({
     <Button
       className={cn(
         listItemClassName,
-        "flex-col items-stretch gap-1.5",
+        "flex-col items-stretch gap-1",
         active
           ? "bg-sidebar-accent text-sidebar-accent-foreground"
           : "text-muted-foreground hover:bg-accent hover:text-foreground",

@@ -344,7 +344,7 @@ export function WorkspaceCommandPalette() {
 export function WorkspaceCommandPaletteTrigger() {
   return (
     <Button
-      className="h-10 w-full justify-start gap-2 rounded-xl border-sidebar-border bg-input px-3 text-left font-medium text-muted-foreground text-sm shadow-[inset_0_1px_0_rgb(255_255_255_/_0.03)] hover:border-ring/30 hover:text-foreground"
+      className="h-9 w-full justify-start gap-2 rounded-lg border-sidebar-border bg-input px-2.5 text-left font-medium text-[0.92rem] text-muted-foreground shadow-[inset_0_1px_0_rgb(255_255_255/0.03)] hover:border-ring/30 hover:text-foreground"
       onClick={() =>
         window.dispatchEvent(new Event(OPEN_COMMAND_PALETTE_EVENT))
       }
