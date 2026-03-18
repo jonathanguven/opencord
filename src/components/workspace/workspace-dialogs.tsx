@@ -575,3 +575,52 @@ export function RenameChannelDialog({
     </Dialog>
   );
 }
+
+interface DeleteChannelDialogProps {
+  name: string;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  open: boolean;
+}
+
+export function DeleteChannelDialog({
+  name,
+  onOpenChange,
+  onSubmit,
+  open,
+}: DeleteChannelDialogProps) {
+  return (
+    <Dialog onOpenChange={onOpenChange} open={open}>
+      <DialogContent className="max-w-md gap-0 rounded-2xl border border-sidebar-border bg-[#2b2d31] p-0 text-[#f2f3f5] ring-0">
+        <form className="flex flex-col" onSubmit={onSubmit}>
+          <DialogHeader className="gap-1 px-5 pt-5 pb-4">
+            <DialogTitle className="font-bold text-[#f2f3f5] text-[1.45rem]">
+              Delete Channel
+            </DialogTitle>
+            <DialogDescription className="text-[#b5bac1] text-sm">
+              Delete{" "}
+              <span className="font-semibold text-[#f2f3f5]">{name}</span>? This
+              action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex items-center justify-end gap-2 border-[#232428] border-t px-5 py-4">
+            <DialogClose
+              render={<Button className="min-w-28" variant="secondary" />}
+            >
+              Cancel
+            </DialogClose>
+            <Button
+              className="min-w-28"
+              disabled={!name.trim()}
+              type="submit"
+              variant="destructive"
+            >
+              Delete
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

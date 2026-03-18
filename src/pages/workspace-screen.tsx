@@ -9,6 +9,7 @@ import { WorkspaceCommandPalette } from "@/components/workspace/workspace-comman
 import {
   CreateChannelDialog,
   CreateServerDialog,
+  DeleteChannelDialog,
   OnboardingDialog,
   RenameChannelDialog,
 } from "@/components/workspace/workspace-dialogs";
@@ -104,6 +105,13 @@ function WorkspaceScreenLayout() {
         onOpenChange={ui.setIsRenameChannelOpen}
         onSubmit={dialogs.submitRenameChannel}
         open={ui.isRenameChannelOpen}
+      />
+
+      <DeleteChannelDialog
+        name={dialogs.deleteChannelName}
+        onOpenChange={ui.setIsDeleteChannelOpen}
+        onSubmit={dialogs.submitDeleteChannel}
+        open={ui.isDeleteChannelOpen}
       />
 
       <WorkspaceCommandPalette />

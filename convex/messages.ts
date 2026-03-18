@@ -18,17 +18,42 @@ const ensureThreadAccess = async (
   args: {
     threadId: Id<"channels"> | Id<"conversations">;
     threadType: "dm" | "channel";
+  },
+  options?: {
+    allowMissing?: boolean;
   }
 ) => {
   if (args.threadType === "channel") {
-    await requireChannelAccess(ctx, args.threadId as Id<"channels">, userId);
-    return;
+    try {
+      await requireChannelAccess(ctx, args.threadId as Id<"channels">, userId);
+      return true;
+    } catch (error) {
+      if (
+        options?.allowMissing &&
+        error instanceof Error &&
+        error.message === "Channel not found."
+      ) {
+        return false;
+      }
+
+      throw error;
+    }
   }
 
   const conversation = await ctx.db.get(args.threadId as Id<"conversations">);
+  if (!conversation) {
+    if (options?.allowMissing) {
+      return false;
+    }
+
+    throw new Error("Conversation not found.");
+  }
+
   if (!conversation?.participantIds.includes(userId)) {
     throw new Error("Conversation not found.");
   }
+
+  return true;
 };
 
 export const list = query({
@@ -39,7 +64,12 @@ export const list = query({
   },
   handler: async (ctx, args) => {
     const { user } = await requireCurrentUser(ctx);
-    await ensureThreadAccess(ctx, user._id, args);
+    const canReadThread = await ensureThreadAccess(ctx, user._id, args, {
+      allowMissing: true,
+    });
+    if (!canReadThread) {
+      return [];
+    }
 
     const messages = await ctx.db
       .query("messages")

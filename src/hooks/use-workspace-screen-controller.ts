@@ -204,6 +204,7 @@ export function useWorkspaceScreenController() {
   const removeFriend = useMutation(api.friends.removeFriend);
   const createInvite = useMutation(api.invites.create);
   const createChannel = useMutation(api.channels.create);
+  const removeChannel = useMutation(api.channels.remove);
   const updateChannel = useMutation(api.channels.update);
   const reorderChannels = useMutation(api.channels.reorder);
   const sendMessage = useMutation(api.messages.send);
@@ -243,6 +244,7 @@ export function useWorkspaceScreenController() {
   const [friendHandleDraft, setFriendHandleDraft] = useState("");
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false);
+  const [isDeleteChannelOpen, setIsDeleteChannelOpen] = useState(false);
   const [isRenameChannelOpen, setIsRenameChannelOpen] = useState(false);
   const [channelCategoryLabelDraft, setChannelCategoryLabelDraft] =
     useState("Text Channels");
@@ -256,6 +258,10 @@ export function useWorkspaceScreenController() {
   );
   const [renameChannelKind, setRenameChannelKind] =
     useState<ChannelKind>("text");
+  const [deleteChannelId, setDeleteChannelId] = useState<Id<"channels"> | null>(
+    null
+  );
+  const [deleteChannelName, setDeleteChannelName] = useState("");
   const [lastFriendsAreaLocation, setLastFriendsAreaLocation] =
     useState<FriendsAreaLocation>({
       kind: "home",
@@ -525,6 +531,15 @@ export function useWorkspaceScreenController() {
     setRenameChannelKind("text");
   }, [isRenameChannelOpen]);
 
+  useEffect(() => {
+    if (isDeleteChannelOpen) {
+      return;
+    }
+
+    setDeleteChannelId(null);
+    setDeleteChannelName("");
+  }, [isDeleteChannelOpen]);
+
   const moveToChannel = async (targetChannelId: Id<"channels">) => {
     const targetChannel =
       activeCallWorkspace?.channels.find(
@@ -712,6 +727,12 @@ export function useWorkspaceScreenController() {
     setIsRenameChannelOpen(true);
   };
 
+  const openDeleteChannel = (channel: Doc<"channels">) => {
+    setDeleteChannelId(channel._id);
+    setDeleteChannelName(channel.name);
+    setIsDeleteChannelOpen(true);
+  };
+
   const submitRenameChannel = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -738,6 +759,22 @@ export function useWorkspaceScreenController() {
       });
       setIsRenameChannelOpen(false);
       toast.success("Channel renamed.");
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    }
+  };
+
+  const submitDeleteChannel = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!deleteChannelId) {
+      return;
+    }
+
+    try {
+      await removeChannel({ channelId: deleteChannelId });
+      setIsDeleteChannelOpen(false);
+      toast.success("Channel deleted.");
     } catch (error) {
       toast.error(getErrorMessage(error));
     }
@@ -1145,6 +1182,7 @@ export function useWorkspaceScreenController() {
     isCallConnecting,
     isCreateChannelOpen,
     isCreateServerOpen,
+    isDeleteChannelOpen,
     isFriendsView,
     isInviteOpen,
     isLeftSidebarCollapsed,
@@ -1162,10 +1200,12 @@ export function useWorkspaceScreenController() {
     navigateToFriendsArea,
     openConversation,
     openCreateChannel,
+    openDeleteChannel,
     openRenameChannel,
     permissions,
     removeFriendship,
     rightSidebarRef,
+    deleteChannelName,
     renameChannelDraft,
     renameChannelKind,
     routeChannelId,
@@ -1186,6 +1226,7 @@ export function useWorkspaceScreenController() {
     setRenameChannelDraft,
     setIsCreateChannelOpen,
     setIsCreateServerOpen,
+    setIsDeleteChannelOpen,
     setIsInviteOpen,
     setIsLeftSidebarCollapsed,
     setIsRenameChannelOpen,
@@ -1201,6 +1242,7 @@ export function useWorkspaceScreenController() {
     submitEditingMessage,
     submitCreateChannel,
     submitCreateServer,
+    submitDeleteChannel,
     submitFriendRequest,
     submitJoinServer,
     submitOnboarding,

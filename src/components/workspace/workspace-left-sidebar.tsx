@@ -16,6 +16,7 @@ import {
   PencilIcon,
   PlusIcon,
   Settings2Icon,
+  Trash2Icon,
   UserPlusIcon,
   UsersIcon,
   Volume2Icon,
@@ -401,6 +402,7 @@ export function WorkspaceSidebar() {
                 onAddChannel={() =>
                   dialogs.openCreateChannel("text", "Text Channels")
                 }
+                onDeleteChannel={dialogs.openDeleteChannel}
                 onRenameChannel={dialogs.openRenameChannel}
                 onReorder={(orderedChannelIds) =>
                   dialogs.reorderChannelSection("text", orderedChannelIds)
@@ -426,6 +428,7 @@ export function WorkspaceSidebar() {
                 onAddChannel={() =>
                   dialogs.openCreateChannel("voice", "Voice Channels")
                 }
+                onDeleteChannel={dialogs.openDeleteChannel}
                 onRenameChannel={dialogs.openRenameChannel}
                 onReorder={(orderedChannelIds) =>
                   dialogs.reorderChannelSection("voice", orderedChannelIds)
@@ -576,6 +579,7 @@ function ChannelSection({
   icon: Icon,
   label,
   onAddChannel,
+  onDeleteChannel,
   onReorder,
   onRenameChannel,
   onSelect,
@@ -587,6 +591,7 @@ function ChannelSection({
   icon: typeof HashIcon;
   label: string;
   onAddChannel: () => void;
+  onDeleteChannel: (channel: Doc<"channels">) => void;
   onReorder: (orderedChannelIds: Id<"channels">[]) => Promise<boolean>;
   onRenameChannel: (channel: Doc<"channels">) => void;
   onSelect: (channel: Doc<"channels">) => Promise<void> | void;
@@ -703,6 +708,7 @@ function ChannelSection({
                           icon={Icon}
                           isDragging={snapshot.isDragging}
                           now={now}
+                          onDeleteChannel={onDeleteChannel}
                           onRenameChannel={onRenameChannel}
                           onSelect={onSelect}
                           showVoicePresence={typeof counts !== "undefined"}
@@ -776,6 +782,7 @@ function ChannelRow({
   icon: Icon,
   isDragging,
   now,
+  onDeleteChannel,
   onRenameChannel,
   onSelect,
   showVoicePresence,
@@ -791,6 +798,7 @@ function ChannelRow({
   icon: typeof HashIcon;
   isDragging: boolean;
   now: number;
+  onDeleteChannel: (channel: Doc<"channels">) => void;
   onRenameChannel: (channel: Doc<"channels">) => void;
   onSelect: (channel: Doc<"channels">) => Promise<void> | void;
   showVoicePresence: boolean;
@@ -883,6 +891,14 @@ function ChannelRow({
           >
             <PencilIcon />
             Rename channel
+          </ContextMenuItem>
+          <ContextMenuItem
+            className="min-h-10 rounded-lg px-3 py-2 font-medium"
+            onClick={() => onDeleteChannel(channel)}
+            variant="destructive"
+          >
+            <Trash2Icon />
+            Delete channel
           </ContextMenuItem>
         </ContextMenuGroup>
       </ContextMenuContent>

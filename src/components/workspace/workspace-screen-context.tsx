@@ -39,6 +39,7 @@ type WorkspaceUiContextValue = Pick<
   WorkspaceController,
   | "isCreateChannelOpen"
   | "isCreateServerOpen"
+  | "isDeleteChannelOpen"
   | "isInviteOpen"
   | "isLeftSidebarCollapsed"
   | "isRenameChannelOpen"
@@ -47,6 +48,7 @@ type WorkspaceUiContextValue = Pick<
   | "rightSidebarRef"
   | "setIsCreateChannelOpen"
   | "setIsCreateServerOpen"
+  | "setIsDeleteChannelOpen"
   | "setIsInviteOpen"
   | "setIsLeftSidebarCollapsed"
   | "setIsRenameChannelOpen"
@@ -62,10 +64,12 @@ type WorkspaceDialogsContextValue = Pick<
   | "channelKindDraft"
   | "channelNameDraft"
   | "copyServerInviteLink"
+  | "deleteChannelName"
   | "displayNameDraft"
   | "handleDraft"
   | "handleError"
   | "openCreateChannel"
+  | "openDeleteChannel"
   | "openRenameChannel"
   | "reorderChannelSection"
   | "renameChannelDraft"
@@ -88,6 +92,7 @@ type WorkspaceDialogsContextValue = Pick<
   | "setServerNameDraft"
   | "submitCreateChannel"
   | "submitCreateServer"
+  | "submitDeleteChannel"
   | "submitJoinServer"
   | "submitOnboarding"
   | "submitRenameChannel"
@@ -195,6 +200,7 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
     copyServerInviteLink,
     cancelEditingMessage,
     current,
+    deleteChannelName,
     deleteOwnMessage,
     declineFriendRequest,
     displayNameDraft,
@@ -216,6 +222,7 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
     isCallConnecting,
     isCreateChannelOpen,
     isCreateServerOpen,
+    isDeleteChannelOpen,
     isFriendsView,
     isInviteOpen,
     isLeftSidebarCollapsed,
@@ -233,6 +240,7 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
     navigateToFriendsArea,
     openConversation,
     openCreateChannel,
+    openDeleteChannel,
     openRenameChannel,
     permissions,
     removeFriendship,
@@ -256,6 +264,7 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
     setHandleDraft,
     setIsCreateChannelOpen,
     setIsCreateServerOpen,
+    setIsDeleteChannelOpen,
     setIsInviteOpen,
     setIsLeftSidebarCollapsed,
     setIsRenameChannelOpen,
@@ -272,6 +281,7 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
     submitEditingMessage,
     submitCreateChannel,
     submitCreateServer,
+    submitDeleteChannel,
     submitFriendRequest,
     submitJoinServer,
     submitOnboarding,
@@ -340,6 +350,7 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
     () => ({
       isCreateChannelOpen,
       isCreateServerOpen,
+      isDeleteChannelOpen,
       isInviteOpen,
       isLeftSidebarCollapsed,
       isRenameChannelOpen,
@@ -348,6 +359,7 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
       rightSidebarRef,
       setIsCreateChannelOpen,
       setIsCreateServerOpen,
+      setIsDeleteChannelOpen,
       setIsInviteOpen,
       setIsLeftSidebarCollapsed,
       setIsRenameChannelOpen,
@@ -358,6 +370,7 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
     [
       isCreateChannelOpen,
       isCreateServerOpen,
+      isDeleteChannelOpen,
       isInviteOpen,
       isLeftSidebarCollapsed,
       isRenameChannelOpen,
@@ -366,6 +379,7 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
       rightSidebarRef,
       setIsCreateChannelOpen,
       setIsCreateServerOpen,
+      setIsDeleteChannelOpen,
       setIsInviteOpen,
       setIsLeftSidebarCollapsed,
       setIsRenameChannelOpen,
@@ -382,10 +396,12 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
       channelKindDraft,
       channelNameDraft,
       copyServerInviteLink,
+      deleteChannelName,
       displayNameDraft,
       handleDraft,
       handleError,
       openCreateChannel,
+      openDeleteChannel,
       openRenameChannel,
       reorderChannelSection,
       renameChannelDraft,
@@ -408,6 +424,7 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
       setServerNameDraft,
       submitCreateChannel,
       submitCreateServer,
+      submitDeleteChannel,
       submitJoinServer,
       submitOnboarding,
       submitRenameChannel,
@@ -418,10 +435,12 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
       channelKindDraft,
       channelNameDraft,
       copyServerInviteLink,
+      deleteChannelName,
       displayNameDraft,
       handleDraft,
       handleError,
       openCreateChannel,
+      openDeleteChannel,
       openRenameChannel,
       reorderChannelSection,
       renameChannelDraft,
@@ -444,6 +463,7 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
       setServerNameDraft,
       submitCreateChannel,
       submitCreateServer,
+      submitDeleteChannel,
       submitJoinServer,
       submitOnboarding,
       submitRenameChannel,
