@@ -6,7 +6,7 @@ import {
   Volume2Icon,
   VolumeXIcon,
 } from "lucide-react";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,22 @@ export function DmPage() {
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
 
   const activeConversation = view.activeConversation;
+  const activeConversationId = activeConversation?._id ?? null;
+
+  useEffect(() => {
+    if (!activeConversationId) {
+      return;
+    }
+
+    const composer = composerRef.current;
+    if (!composer) {
+      return;
+    }
+
+    composer.focus({ preventScroll: true });
+    const caretPosition = composer.value.length;
+    composer.setSelectionRange(caretPosition, caretPosition);
+  }, [activeConversationId]);
 
   if (!activeConversation) {
     return view.activeConversationId ? <ThreadLoadingState /> : null;

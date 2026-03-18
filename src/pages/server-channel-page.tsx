@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageBox } from "@/components/workspace/message-box";
 import { VoiceChannelPanel } from "@/components/workspace/voice-channel-panel";
@@ -17,6 +17,23 @@ export function ServerChannelPage() {
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
 
   const activeChannel = view.activeChannel;
+  const activeChannelId = activeChannel?._id ?? null;
+  const isActiveTextChannel = activeChannel?.kind === "text";
+
+  useEffect(() => {
+    if (!(activeChannelId && isActiveTextChannel)) {
+      return;
+    }
+
+    const composer = composerRef.current;
+    if (!composer) {
+      return;
+    }
+
+    composer.focus({ preventScroll: true });
+    const caretPosition = composer.value.length;
+    composer.setSelectionRange(caretPosition, caretPosition);
+  }, [activeChannelId, isActiveTextChannel]);
 
   if (!activeChannel) {
     return <ThreadLoadingState />;
