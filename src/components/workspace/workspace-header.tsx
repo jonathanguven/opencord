@@ -51,9 +51,11 @@ export function WorkspaceHeader() {
             aria-label="start voice call"
             onClick={call.startConversationCall}
             render={
-              <button
-                className="inline-flex size-7 items-center justify-center rounded-[min(var(--radius-md),12px)] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              <Button
+                className="size-7 rounded-[min(var(--radius-md),12px)] text-muted-foreground hover:bg-accent hover:text-foreground"
+                size="icon-sm"
                 type="button"
+                variant="plain"
               />
             }
           >
@@ -105,9 +107,11 @@ export function WorkspaceHeader() {
           <TooltipTrigger
             onClick={ui.toggleRightSidebar}
             render={
-              <button
-                className="inline-flex size-7 items-center justify-center rounded-[min(var(--radius-md),12px)] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              <Button
+                className="size-7 rounded-[min(var(--radius-md),12px)] text-muted-foreground hover:bg-accent hover:text-foreground"
+                size="icon-sm"
                 type="button"
+                variant="plain"
               />
             }
           >

@@ -121,3 +121,8 @@ Biome's linter will catch most issues automatically. Focus your attention on:
 ---
 
 Most formatting and common issues are automatically fixed by Biome. Run `npm exec -- ultracite fix` before committing to ensure compliance.
+
+# Project Rules
+
+Use bun as the package manager of choice
+Never use the raw html `<button>`, use the shadcn `<Button>` component

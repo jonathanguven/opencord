@@ -7,6 +7,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   Empty,
   EmptyDescription,
@@ -149,11 +150,13 @@ export function MessageFeed({
                 <Tooltip>
                   <TooltipTrigger
                     render={
-                      <button
+                      <Button
                         aria-label="Edit message"
-                        className="group/edit inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-all hover:scale-105 hover:bg-background/80 hover:text-foreground"
+                        className="group/edit size-7 rounded-md text-muted-foreground transition-all hover:scale-105 hover:bg-background/80 hover:text-foreground"
                         onClick={() => onEditMessage(message._id)}
+                        size="icon-sm"
                         type="button"
+                        variant="plain"
                       />
                     }
                   >
@@ -164,11 +167,13 @@ export function MessageFeed({
                 <Tooltip>
                   <TooltipTrigger
                     render={
-                      <button
+                      <Button
                         aria-label="Delete message"
-                        className="group/delete inline-flex size-7 items-center justify-center rounded-md text-destructive transition-all hover:scale-105 hover:bg-destructive/10 hover:text-destructive"
+                        className="group/delete size-7 rounded-md text-destructive transition-all hover:scale-105 hover:bg-destructive/10 hover:text-destructive"
                         onClick={() => onDeleteMessage(message._id)}
+                        size="icon-sm"
                         type="button"
+                        variant="plain"
                       />
                     }
                   >

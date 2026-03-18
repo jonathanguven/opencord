@@ -70,10 +70,10 @@ const SIDEBAR_RAIL_TONES = [
 ] as const;
 
 const railButtonClassName =
-  "size-12 rounded-[1.35rem] border border-sidebar-border bg-sidebar text-sidebar-foreground transition-all hover:bg-accent hover:text-accent-foreground";
+  "size-12 rounded-[1.35rem] border border-sidebar-border bg-sidebar text-sidebar-foreground hover:bg-accent hover:text-accent-foreground";
 
 const listItemClassName =
-  "flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-colors";
+  "w-full justify-start gap-2.5 rounded-xl px-2.5 py-2 text-left";
 
 const VOICE_TIMER_INTERVAL_MS = 1000;
 const MAX_VISIBLE_VOICE_AVATARS = 4;
@@ -210,9 +210,9 @@ export function WorkspaceSidebar() {
         {view.isFriendsView ? (
           <ScrollArea className="h-full">
             <div className="flex flex-col gap-2 p-3">
-              <button
+              <Button
                 className={cn(
-                  "flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left font-semibold text-[0.95rem] transition-colors",
+                  "h-auto w-full justify-start gap-3 rounded-2xl px-3 py-3 text-left font-semibold text-[0.95rem]",
                   isFriendsHomeActive
                     ? "bg-sidebar-accent text-sidebar-accent-foreground"
                     : "text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -222,23 +222,26 @@ export function WorkspaceSidebar() {
                   friends.setFriendsTab("all");
                 }}
                 type="button"
+                variant="plain"
               >
                 <UsersIcon className="size-5 shrink-0" />
                 <span className="truncate">Friends</span>
-              </button>
+              </Button>
 
               <div className="mt-3 flex items-center justify-between px-2">
                 <div className="font-semibold text-muted-foreground text-sm">
                   Direct Messages
                 </div>
-                <button
-                  className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                <Button
+                  className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
                   onClick={navigation.showAddFriendTab}
+                  size="icon-xs"
                   type="button"
+                  variant="plain"
                 >
                   <PlusIcon className="size-4" />
                   <span className="sr-only">Add friend</span>
-                </button>
+                </Button>
               </div>
 
               <div className="flex flex-col gap-1">
@@ -282,9 +285,10 @@ export function WorkspaceSidebar() {
                   <DropdownMenu>
                     <DropdownMenuTrigger
                       render={
-                        <button
-                          className="inline-flex h-8 w-auto max-w-full items-center rounded-xl px-2.5 font-semibold text-[0.95rem] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground data-popup-open:bg-accent data-popup-open:text-foreground"
+                        <Button
+                          className="h-8 w-auto max-w-full rounded-xl px-2.5 font-semibold text-[0.95rem] text-muted-foreground hover:bg-accent hover:text-foreground data-popup-open:bg-accent data-popup-open:text-foreground"
                           type="button"
+                          variant="plain"
                         />
                       }
                     >
@@ -320,9 +324,11 @@ export function WorkspaceSidebar() {
                     <TooltipTrigger
                       onClick={() => ui.setIsInviteOpen(true)}
                       render={
-                        <button
-                          className="ml-auto inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                        <Button
+                          className="ml-auto size-8 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
+                          size="icon"
                           type="button"
+                          variant="plain"
                         />
                       }
                     >
@@ -472,7 +478,7 @@ function DiscordDmRow({
   onClick,
 }: DiscordDmRowProps) {
   return (
-    <button
+    <Button
       className={cn(
         listItemClassName,
         active
@@ -480,7 +486,9 @@ function DiscordDmRow({
           : "text-muted-foreground hover:bg-accent hover:text-foreground"
       )}
       onClick={onClick}
+      size="none"
       type="button"
+      variant="plain"
     >
       <div className="relative shrink-0">
         <Avatar className="size-9">
@@ -502,7 +510,7 @@ function DiscordDmRow({
         </div>
         <div className="truncate text-muted-foreground text-xs">{subtitle}</div>
       </div>
-    </button>
+    </Button>
   );
 }
 
@@ -566,9 +574,11 @@ function ChannelSection({
             <TooltipTrigger
               onClick={onAddChannel}
               render={
-                <button
-                  className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                <Button
+                  className="size-6 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+                  size="icon-xs"
                   type="button"
+                  variant="plain"
                 />
               }
             >
@@ -709,7 +719,7 @@ function ChannelRow({
   trailingContent: ReactNode;
 }) {
   return (
-    <button
+    <Button
       className={cn(
         listItemClassName,
         "flex-col items-stretch gap-1.5",
@@ -723,9 +733,11 @@ function ChannelRow({
         await onSelect(channel);
       }}
       ref={draggableProvided.innerRef}
+      size="none"
       {...draggableProvided.draggableProps}
       {...(canManageChannels ? draggableProvided.dragHandleProps : {})}
       type="button"
+      variant="plain"
     >
       <div className="flex items-center gap-2.5">
         <Icon
@@ -748,7 +760,7 @@ function ChannelRow({
       {count > 0 && showVoicePresence ? (
         <VoiceParticipantStrip members={channelMembers} />
       ) : null}
-    </button>
+    </Button>
   );
 }
 

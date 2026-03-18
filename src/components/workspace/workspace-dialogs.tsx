@@ -2,8 +2,8 @@ import {
   ArrowRightIcon,
   CompassIcon,
   HashIcon,
-  Volume2Icon,
   LockIcon,
+  Volume2Icon,
 } from "lucide-react";
 import type { FormEvent } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -382,9 +382,9 @@ export function CreateChannelDialog({
                     const Icon = option.icon;
 
                     return (
-                      <button
+                      <Button
                         className={cn(
-                          "flex w-full cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors",
+                          "h-auto w-full justify-start gap-3 rounded-xl px-3 py-2.5 text-left",
                           kind === option.value
                             ? "border-[#4e5ae8] bg-[#36393f] text-[#f2f3f5]"
                             : "border-transparent bg-transparent text-[#dbdee1] hover:bg-[#32353b] hover:text-[#f2f3f5]"
@@ -392,6 +392,7 @@ export function CreateChannelDialog({
                         key={option.value}
                         onClick={() => onKindChange(option.value)}
                         type="button"
+                        variant="plain"
                       >
                         <RadioGroupItem
                           aria-label={
@@ -406,7 +407,7 @@ export function CreateChannelDialog({
                             {option.value === "text" ? "Text" : "Voice"}
                           </div>
                         </div>
-                      </button>
+                      </Button>
                     );
                   })}
                 </RadioGroup>

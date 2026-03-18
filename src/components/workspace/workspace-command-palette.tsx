@@ -4,6 +4,7 @@ import { HashIcon, SearchIcon, Volume2Icon } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   Command,
   CommandDialog,
@@ -342,16 +343,17 @@ export function WorkspaceCommandPalette() {
 
 export function WorkspaceCommandPaletteTrigger() {
   return (
-    <button
-      className="flex h-10 w-full items-center gap-2 rounded-xl border border-sidebar-border bg-input px-3 text-left font-medium text-muted-foreground text-sm shadow-[inset_0_1px_0_rgb(255_255_255_/_0.03)] transition-colors hover:border-ring/30 hover:text-foreground"
+    <Button
+      className="h-10 w-full justify-start gap-2 rounded-xl border-sidebar-border bg-input px-3 text-left font-medium text-muted-foreground text-sm shadow-[inset_0_1px_0_rgb(255_255_255_/_0.03)] hover:border-ring/30 hover:text-foreground"
       onClick={() =>
         window.dispatchEvent(new Event(OPEN_COMMAND_PALETTE_EVENT))
       }
       type="button"
+      variant="plain"
     >
       <SearchIcon className="size-4 shrink-0 text-muted-foreground" />
       <span className="flex-1 truncate">Find conversation or channel</span>
-    </button>
+    </Button>
   );
 }
 
