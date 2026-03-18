@@ -1,6 +1,6 @@
 import { type RequestForQueries, useQueries } from "convex/react";
 import Fuse from "fuse.js";
-import { HashIcon, SearchIcon, Volume2Icon } from "lucide-react";
+import { HashIcon, Volume2Icon } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -351,8 +351,7 @@ export function WorkspaceCommandPaletteTrigger() {
       type="button"
       variant="plain"
     >
-      <SearchIcon className="size-4 shrink-0 text-muted-foreground" />
-      <span className="flex-1 truncate">Find conversation or channel</span>
+      <span className="flex-1 truncate text-center">Find DM or channel</span>
     </Button>
   );
 }
