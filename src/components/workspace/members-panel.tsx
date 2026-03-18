@@ -12,9 +12,7 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,7 +38,6 @@ const MEMBER_SKELETON_KEYS = [
 
 interface MembersPanelProps {
   canModerate: boolean;
-  currentUserId: Id<"users"> | null;
   onForceDeafen: (memberUserId: Id<"users">, forcedDeafen: boolean) => void;
   onForceMute: (memberUserId: Id<"users">, forcedMute: boolean) => void;
   onMoveMember: (
@@ -54,7 +51,6 @@ interface MembersPanelProps {
 
 interface MemberCardProps {
   canModerate: boolean;
-  currentUserId: Id<"users"> | null;
   member: WorkspaceResult["members"][number];
   onForceDeafen: (memberUserId: Id<"users">, forcedDeafen: boolean) => void;
   onForceMute: (memberUserId: Id<"users">, forcedMute: boolean) => void;
@@ -68,7 +64,6 @@ interface MemberCardProps {
 
 export function MembersPanel({
   canModerate,
-  currentUserId,
   onForceDeafen,
   onForceMute,
   onMoveMember,
@@ -78,20 +73,19 @@ export function MembersPanel({
 }: MembersPanelProps) {
   if (!workspace) {
     return (
-      <div className="flex flex-col gap-3 p-4">
+      <div className="flex flex-col gap-2 px-4 py-2">
         {MEMBER_SKELETON_KEYS.map((key) => (
-          <Skeleton className="h-20 rounded-xl" key={key} />
+          <Skeleton className="h-14 rounded-xl" key={key} />
         ))}
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-2 p-4">
+    <div className="flex flex-col gap-1 px-2 py-1">
       {workspace.members.map((member) => (
         <MemberCard
           canModerate={canModerate}
-          currentUserId={currentUserId}
           key={member._id}
           member={member}
           onForceDeafen={onForceDeafen}
@@ -107,7 +101,6 @@ export function MembersPanel({
 
 function MemberCard({
   canModerate,
-  currentUserId,
   member,
   onForceDeafen,
   onForceMute,
@@ -121,85 +114,72 @@ function MemberCard({
     ? (voiceChannels.find((channel) => channel._id === voiceState.channelId) ??
       null)
     : null;
-  let presenceLabel = "Available";
-
-  if (voiceChannel) {
-    presenceLabel = `In ${voiceChannel.name}`;
-  } else if (member.userId === currentUserId) {
-    presenceLabel = "You";
-  }
+  const presenceLabel = voiceChannel ? `In ${voiceChannel.name}` : null;
 
   return (
-    <Card className="bg-muted/20" size="sm">
-      <CardContent className="flex items-center gap-3 pt-3">
-        <Avatar>
-          <AvatarImage src={member.user?.avatarUrl ?? undefined} />
-          <AvatarFallback>
-            {getInitials(getDisplayName(member.user))}
-          </AvatarFallback>
-          {voiceState ? <AvatarBadge /> : null}
-        </Avatar>
-        <div className="min-w-0 flex-1">
-          <div className="truncate font-medium">
-            {member.nickname || getDisplayName(member.user)}
-          </div>
+    <div className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-accent/50">
+      <Avatar>
+        <AvatarImage src={member.user?.avatarUrl ?? undefined} />
+        <AvatarFallback>
+          {getInitials(getDisplayName(member.user))}
+        </AvatarFallback>
+        {voiceState ? <AvatarBadge /> : null}
+      </Avatar>
+      <div className="min-w-0 flex-1">
+        <div className="truncate font-medium">
+          {member.nickname || getDisplayName(member.user)}
+        </div>
+        {presenceLabel ? (
           <div className="truncate text-muted-foreground text-xs">
             {presenceLabel}
           </div>
-        </div>
-        {voiceState ? (
-          <Badge variant="secondary">Voice</Badge>
-        ) : (
-          <Badge variant="outline">Text</Badge>
-        )}
-
-        {canModerate && voiceState ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={<Button size="icon-sm" variant="ghost" />}
-            >
-              <Settings2Icon />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Moderation</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuGroup>
-                <DropdownMenuItem
-                  onClick={() =>
-                    onForceMute(member.userId, !voiceState.forcedMute)
-                  }
-                >
-                  {voiceState.forcedMute ? <MicIcon /> : <MicOffIcon />}
-                  {voiceState.forcedMute ? "Unmute member" : "Mute member"}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() =>
-                    onForceDeafen(member.userId, !voiceState.forcedDeafen)
-                  }
-                >
-                  {voiceState.forcedDeafen ? <Volume2Icon /> : <VolumeXIcon />}
-                  {voiceState.forcedDeafen
-                    ? "Undeafen member"
-                    : "Deafen member"}
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel>Move to channel</DropdownMenuLabel>
-              <DropdownMenuGroup>
-                {voiceChannels.map((channel) => (
-                  <DropdownMenuItem
-                    key={channel._id}
-                    onClick={() => onMoveMember(member.userId, channel._id)}
-                  >
-                    <Volume2Icon />
-                    {channel.name}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
         ) : null}
-      </CardContent>
-    </Card>
+      </div>
+
+      {canModerate && voiceState ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={<Button size="icon-sm" variant="ghost" />}
+          >
+            <Settings2Icon />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Moderation</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuItem
+                onClick={() =>
+                  onForceMute(member.userId, !voiceState.forcedMute)
+                }
+              >
+                {voiceState.forcedMute ? <MicIcon /> : <MicOffIcon />}
+                {voiceState.forcedMute ? "Unmute member" : "Mute member"}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() =>
+                  onForceDeafen(member.userId, !voiceState.forcedDeafen)
+                }
+              >
+                {voiceState.forcedDeafen ? <Volume2Icon /> : <VolumeXIcon />}
+                {voiceState.forcedDeafen ? "Undeafen member" : "Deafen member"}
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Move to channel</DropdownMenuLabel>
+            <DropdownMenuGroup>
+              {voiceChannels.map((channel) => (
+                <DropdownMenuItem
+                  key={channel._id}
+                  onClick={() => onMoveMember(member.userId, channel._id)}
+                >
+                  <Volume2Icon />
+                  {channel.name}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : null}
+    </div>
   );
 }

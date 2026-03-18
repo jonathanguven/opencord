@@ -28,7 +28,6 @@ export function WorkspaceRightSidebar() {
         ) : (
           <MembersPanel
             canModerate={canModerate}
-            currentUserId={view.current?.user?._id ?? null}
             onForceDeafen={moderation.forceDeafenMember}
             onForceMute={moderation.forceMuteMember}
             onMoveMember={moderation.moveWorkspaceMember}
