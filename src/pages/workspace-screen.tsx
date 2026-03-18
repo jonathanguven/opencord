@@ -38,6 +38,8 @@ function WorkspaceScreenLayout() {
   const ui = useWorkspaceUi();
   const dialogs = useWorkspaceDialogs();
   const call = useWorkspaceCall();
+  const showWorkspaceHeader =
+    !view.isFriendsView || Boolean(view.activeConversationId);
 
   return (
     <div className="flex min-h-svh bg-[#313338] text-[#f2f3f5]">
@@ -104,7 +106,7 @@ function WorkspaceScreenLayout() {
 
             <ResizablePanel defaultSize="78%" minSize="40%">
               <main className="flex h-full min-w-0 flex-col bg-background">
-                <WorkspaceHeader />
+                {showWorkspaceHeader ? <WorkspaceHeader /> : null}
 
                 <div className="min-h-0 flex-1">
                   <WorkspaceMainContent />
