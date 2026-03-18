@@ -156,10 +156,7 @@ const resolveHeaderSubtitle = ({
     );
   }
 
-  return (
-    activeServer?.description ||
-    "Invite-only workspace with text channels, voice rooms, and private access."
-  );
+  return activeServer?.description ?? "";
 };
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: This controller is an intermediate extraction layer and is still being split into smaller hooks.

@@ -13,16 +13,14 @@ export function WorkspaceRightSidebar() {
 
   return (
     <aside className="flex h-full flex-col border-border/60 border-l bg-card/40">
-      <div className="border-border/60 border-b px-4 py-3">
-        <div className="font-medium text-sm">
-          {view.isFriendsView ? "Profile" : "Members"}
+      {view.isFriendsView ? (
+        <div className="border-border/60 border-b px-4 py-3">
+          <div className="font-medium text-sm">Profile</div>
+          <div className="text-muted-foreground text-xs">
+            The person on the other side of the thread.
+          </div>
         </div>
-        <div className="text-muted-foreground text-xs">
-          {view.isFriendsView
-            ? "The person on the other side of the thread."
-            : "Live workspace roster and voice moderation shortcuts."}
-        </div>
-      </div>
+      ) : null}
 
       <ScrollArea className="flex-1">
         {view.isFriendsView ? (
