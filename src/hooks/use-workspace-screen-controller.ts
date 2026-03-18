@@ -708,13 +708,15 @@ export function useWorkspaceScreenController() {
   };
 
   const editLatestOwnMessage = () => {
-    if (!current?.user?._id) {
+    const currentUserId = current?.user?._id;
+
+    if (!currentUserId) {
       return false;
     }
 
     const latestOwnMessage = [...(messages ?? [])]
       .reverse()
-      .find((message) => message.authorId === current.user._id);
+      .find((message) => message.authorId === currentUserId);
 
     if (!latestOwnMessage) {
       return false;

@@ -1,6 +1,7 @@
 import {
   DragDropContext,
   Draggable,
+  type DraggableProvided,
   Droppable,
   type DropResult,
 } from "@hello-pangea/dnd";
@@ -45,6 +46,7 @@ import {
 } from "@/components/ui/tooltip";
 import { WorkspaceCommandPaletteTrigger } from "@/components/workspace/workspace-command-palette";
 import {
+  useWorkspaceCall,
   useWorkspaceDialogs,
   useWorkspaceFriends,
   useWorkspaceNavigation,
@@ -72,6 +74,9 @@ const railButtonClassName =
 
 const listItemClassName =
   "flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-colors";
+
+const VOICE_TIMER_INTERVAL_MS = 1000;
+const MAX_VISIBLE_VOICE_AVATARS = 4;
 
 interface DiscordDmRowProps {
   active?: boolean;
@@ -180,6 +185,7 @@ export function WorkspaceRail() {
 }
 
 export function WorkspaceSidebar() {
+  const call = useWorkspaceCall();
   const view = useWorkspaceView();
   const ui = useWorkspaceUi();
   const dialogs = useWorkspaceDialogs();
@@ -342,13 +348,13 @@ export function WorkspaceSidebar() {
                 onReorder={(orderedChannelIds) =>
                   dialogs.reorderChannelSection("text", orderedChannelIds)
                 }
-                onSelect={(channelId) => {
+                onSelect={(channel) => {
                   if (!view.activeServerId) {
                     return;
                   }
 
                   navigation.navigate(
-                    getChannelPath(view.activeServerId, channelId)
+                    getChannelPath(view.activeServerId, channel._id)
                   );
                 }}
               />
@@ -366,14 +372,16 @@ export function WorkspaceSidebar() {
                 onReorder={(orderedChannelIds) =>
                   dialogs.reorderChannelSection("voice", orderedChannelIds)
                 }
-                onSelect={(channelId) => {
+                onSelect={async (channel) => {
                   if (!view.activeServerId) {
                     return;
                   }
 
                   navigation.navigate(
-                    getChannelPath(view.activeServerId, channelId)
+                    getChannelPath(view.activeServerId, channel._id)
                   );
+
+                  await call.joinVoiceChannel(channel);
                 }}
               />
             </div>
@@ -517,9 +525,10 @@ function ChannelSection({
   label: string;
   onAddChannel: () => void;
   onReorder: (orderedChannelIds: Id<"channels">[]) => Promise<boolean>;
-  onSelect: (channelId: Id<"channels">) => void;
+  onSelect: (channel: Doc<"channels">) => Promise<void> | void;
 }) {
   const [orderedChannels, setOrderedChannels] = useState(channels);
+  const now = useTicker(typeof counts !== "undefined");
 
   useEffect(() => {
     setOrderedChannels(channels);
@@ -582,9 +591,19 @@ function ChannelSection({
                 ref={droppableProvided.innerRef}
               >
                 {orderedChannels.map((channel, index) => {
-                  const count =
-                    counts?.filter((entry) => entry.channelId === channel._id)
-                      .length ?? 0;
+                  const channelMembers =
+                    counts?.filter(
+                      (entry) => entry.channelId === channel._id
+                    ) ?? [];
+                  const count = channelMembers.length;
+                  const callStartedAt =
+                    count > 0
+                      ? channelMembers.reduce(
+                          (earliestConnectedAt, member) =>
+                            Math.min(earliestConnectedAt, member.connectedAt),
+                          channelMembers[0]?.connectedAt ?? now
+                        )
+                      : null;
                   let trailingContent: ReactNode = null;
 
                   if (typeof counts === "undefined") {
@@ -612,31 +631,21 @@ function ChannelSection({
                       key={channel._id}
                     >
                       {(draggableProvided, snapshot) => (
-                        <button
-                          className={cn(
-                            listItemClassName,
-                            activeChannelId === channel._id
-                              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                              : "text-muted-foreground hover:bg-accent hover:text-foreground",
-                            canManageChannels &&
-                              "cursor-grab active:cursor-grabbing",
-                            snapshot.isDragging &&
-                              "border border-sidebar-border bg-sidebar shadow-lg"
-                          )}
-                          onClick={() => onSelect(channel._id)}
-                          ref={draggableProvided.innerRef}
-                          {...draggableProvided.draggableProps}
-                          {...(canManageChannels
-                            ? draggableProvided.dragHandleProps
-                            : {})}
-                          type="button"
-                        >
-                          <Icon className="size-4 shrink-0" />
-                          <span className="flex-1 truncate font-semibold text-[0.9rem]">
-                            {getChannelNameText(channel)}
-                          </span>
-                          <div className="shrink-0">{trailingContent}</div>
-                        </button>
+                        <ChannelRow
+                          active={activeChannelId === channel._id}
+                          canManageChannels={canManageChannels}
+                          channel={channel}
+                          channelMembers={channelMembers}
+                          count={count}
+                          draggableProvided={draggableProvided}
+                          icon={Icon}
+                          isDragging={snapshot.isDragging}
+                          now={now}
+                          onSelect={onSelect}
+                          showVoicePresence={typeof counts !== "undefined"}
+                          startedAt={callStartedAt}
+                          trailingContent={trailingContent}
+                        />
                       )}
                     </Draggable>
                   );
@@ -668,6 +677,139 @@ function ChannelSection({
       )}
     </div>
   );
+}
+
+function ChannelRow({
+  active,
+  canManageChannels,
+  channel,
+  channelMembers,
+  count,
+  draggableProvided,
+  icon: Icon,
+  isDragging,
+  now,
+  onSelect,
+  showVoicePresence,
+  startedAt,
+  trailingContent,
+}: {
+  active: boolean;
+  canManageChannels: boolean;
+  channel: Doc<"channels">;
+  channelMembers: VoicePresenceItem[];
+  count: number;
+  draggableProvided: DraggableProvided;
+  icon: typeof HashIcon;
+  isDragging: boolean;
+  now: number;
+  onSelect: (channel: Doc<"channels">) => Promise<void> | void;
+  showVoicePresence: boolean;
+  startedAt: number | null;
+  trailingContent: ReactNode;
+}) {
+  return (
+    <button
+      className={cn(
+        listItemClassName,
+        "flex-col items-stretch gap-1.5",
+        active
+          ? "bg-sidebar-accent text-sidebar-accent-foreground"
+          : "text-muted-foreground hover:bg-accent hover:text-foreground",
+        canManageChannels && "cursor-grab active:cursor-grabbing",
+        isDragging && "border border-sidebar-border bg-sidebar shadow-lg"
+      )}
+      onClick={async () => {
+        await onSelect(channel);
+      }}
+      ref={draggableProvided.innerRef}
+      {...draggableProvided.draggableProps}
+      {...(canManageChannels ? draggableProvided.dragHandleProps : {})}
+      type="button"
+    >
+      <div className="flex items-center gap-2.5">
+        <Icon
+          className={cn(
+            "size-4 shrink-0",
+            count > 0 && showVoicePresence && "text-emerald-400"
+          )}
+        />
+        <span className="flex-1 truncate font-semibold text-[0.9rem]">
+          {getChannelNameText(channel)}
+        </span>
+        {startedAt && showVoicePresence ? (
+          <span className="shrink-0 font-bold text-[0.8rem] text-emerald-400 tabular-nums">
+            {formatVoiceDuration(now - startedAt)}
+          </span>
+        ) : (
+          <div className="shrink-0">{trailingContent}</div>
+        )}
+      </div>
+      {count > 0 && showVoicePresence ? (
+        <VoiceParticipantStrip members={channelMembers} />
+      ) : null}
+    </button>
+  );
+}
+
+function VoiceParticipantStrip({ members }: { members: VoicePresenceItem[] }) {
+  const visibleMembers = members.slice(0, MAX_VISIBLE_VOICE_AVATARS);
+  const overflowCount = members.length - visibleMembers.length;
+
+  return (
+    <div className="flex items-center gap-1.5 pl-6">
+      {visibleMembers.map((member) => (
+        <Avatar
+          className="-ml-1 size-6 border-2 border-sidebar first:ml-0"
+          key={member._id}
+        >
+          <AvatarImage src={member.user?.avatarUrl ?? undefined} />
+          <AvatarFallback className="bg-primary/20 text-[0.55rem] text-primary-foreground">
+            {getInitials(getDisplayName(member.user))}
+          </AvatarFallback>
+        </Avatar>
+      ))}
+      {overflowCount > 0 ? (
+        <span className="rounded-full bg-background/70 px-1.5 py-0.5 font-bold text-[0.65rem] text-foreground">
+          +{overflowCount}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+function useTicker(enabled: boolean) {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
+    setNow(Date.now());
+    const intervalId = window.setInterval(() => {
+      setNow(Date.now());
+    }, VOICE_TIMER_INTERVAL_MS);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [enabled]);
+
+  return now;
+}
+
+function formatVoiceDuration(durationMs: number) {
+  const totalSeconds = Math.max(0, Math.floor(durationMs / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  }
+
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
 function InviteToServerIcon({ className }: { className?: string }) {
