@@ -488,3 +488,90 @@ export function CreateChannelDialog({
     </Dialog>
   );
 }
+
+interface RenameChannelDialogProps {
+  kind: "text" | "voice";
+  name: string;
+  onNameChange: (value: string) => void;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  open: boolean;
+}
+
+export function RenameChannelDialog({
+  kind,
+  name,
+  onNameChange,
+  onOpenChange,
+  onSubmit,
+  open,
+}: RenameChannelDialogProps) {
+  return (
+    <Dialog onOpenChange={onOpenChange} open={open}>
+      <DialogContent className="max-w-md gap-0 rounded-2xl border border-sidebar-border bg-[#2b2d31] p-0 text-[#f2f3f5] ring-0">
+        <form className="flex flex-col" onSubmit={onSubmit}>
+          <DialogHeader className="gap-1 px-5 pt-5 pb-4">
+            <DialogTitle className="font-bold text-[#f2f3f5] text-[1.45rem]">
+              Rename Channel
+            </DialogTitle>
+            <DialogDescription className="text-[#b5bac1] text-sm">
+              Update the channel name for your server sidebar.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="px-5 pb-5">
+            <Field>
+              <FieldLabel
+                className="font-extrabold text-[#f2f3f5] text-base"
+                htmlFor="rename-channel-name"
+              >
+                Channel Name
+              </FieldLabel>
+              <FieldContent>
+                <InputGroup className="mt-2 h-11 rounded-xl border border-[#1e1f22] bg-[#1e1f22] shadow-none">
+                  <InputGroupAddon
+                    align="inline-start"
+                    className="border-0 bg-transparent pl-3 text-[#b5bac1]"
+                  >
+                    <InputGroupText className="bg-transparent px-0 text-[#b5bac1] text-[1.15rem]">
+                      {kind === "text" ? (
+                        "#"
+                      ) : (
+                        <Volume2Icon className="size-4" />
+                      )}
+                    </InputGroupText>
+                  </InputGroupAddon>
+                  <InputGroupInput
+                    autoFocus
+                    className="border-0 bg-transparent px-3 text-[#f2f3f5] text-sm shadow-none placeholder:text-[#80848e] focus-visible:ring-0"
+                    id="rename-channel-name"
+                    onChange={(event) => onNameChange(event.target.value)}
+                    placeholder={
+                      kind === "text" ? "rename-channel" : "rename-voice"
+                    }
+                    value={name}
+                  />
+                </InputGroup>
+              </FieldContent>
+            </Field>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 border-[#232428] border-t px-5 py-4">
+            <DialogClose
+              render={<Button className="min-w-28" variant="secondary" />}
+            >
+              Cancel
+            </DialogClose>
+            <Button
+              className="min-w-28 bg-[#5865f2] text-white hover:bg-[#4752c4]"
+              disabled={!name.trim()}
+              type="submit"
+            >
+              Save
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

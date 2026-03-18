@@ -10,6 +10,7 @@ import {
   CreateChannelDialog,
   CreateServerDialog,
   OnboardingDialog,
+  RenameChannelDialog,
 } from "@/components/workspace/workspace-dialogs";
 import { WorkspaceHeader } from "@/components/workspace/workspace-header";
 import {
@@ -94,6 +95,15 @@ function WorkspaceScreenLayout() {
         onOpenChange={ui.setIsCreateChannelOpen}
         onSubmit={dialogs.submitCreateChannel}
         open={ui.isCreateChannelOpen}
+      />
+
+      <RenameChannelDialog
+        kind={dialogs.renameChannelKind}
+        name={dialogs.renameChannelDraft}
+        onNameChange={dialogs.setRenameChannelDraft}
+        onOpenChange={ui.setIsRenameChannelOpen}
+        onSubmit={dialogs.submitRenameChannel}
+        open={ui.isRenameChannelOpen}
       />
 
       <WorkspaceCommandPalette />

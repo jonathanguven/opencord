@@ -13,6 +13,7 @@ import {
   LogOutIcon,
   MessageSquareIcon,
   MicIcon,
+  PencilIcon,
   PlusIcon,
   Settings2Icon,
   UserPlusIcon,
@@ -23,6 +24,13 @@ import { type ReactNode, useEffect, useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuGroup,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -77,6 +85,52 @@ const listItemClassName =
 
 const VOICE_TIMER_INTERVAL_MS = 1000;
 const MAX_VISIBLE_VOICE_AVATARS = 4;
+
+function getDroppableBindings(droppableProvided: DroppableProvided) {
+  "use no memo";
+
+  return {
+    droppableContextId:
+      droppableProvided.droppableProps["data-rfd-droppable-context-id"],
+    droppableId: droppableProvided.droppableProps["data-rfd-droppable-id"],
+    innerRef: droppableProvided.innerRef,
+    placeholder: droppableProvided.placeholder,
+  };
+}
+
+function getDraggableBindings(
+  draggableProvided: DraggableProvided,
+  canManageChannels: boolean
+) {
+  "use no memo";
+
+  const { dragHandleProps, draggableProps, innerRef } = draggableProvided;
+
+  return {
+    ariaDescribedBy: dragHandleProps?.["aria-describedby"],
+    dataDraggableContextId: draggableProps["data-rfd-draggable-context-id"],
+    dataDraggableId: draggableProps["data-rfd-draggable-id"],
+    dataDragHandleContextId: canManageChannels
+      ? (dragHandleProps?.["data-rfd-drag-handle-context-id"] ?? undefined)
+      : undefined,
+    dataDragHandleDraggableId: canManageChannels
+      ? (dragHandleProps?.["data-rfd-drag-handle-draggable-id"] ?? undefined)
+      : undefined,
+    draggable: canManageChannels
+      ? (dragHandleProps?.draggable ?? undefined)
+      : undefined,
+    innerRef,
+    onDragStart: canManageChannels
+      ? (dragHandleProps?.onDragStart ?? undefined)
+      : undefined,
+    onTransitionEnd: draggableProps.onTransitionEnd,
+    role: canManageChannels ? (dragHandleProps?.role ?? undefined) : undefined,
+    style: draggableProps.style,
+    tabIndex: canManageChannels
+      ? (dragHandleProps?.tabIndex ?? undefined)
+      : undefined,
+  };
+}
 
 interface DiscordDmRowProps {
   active?: boolean;
@@ -347,6 +401,7 @@ export function WorkspaceSidebar() {
                 onAddChannel={() =>
                   dialogs.openCreateChannel("text", "Text Channels")
                 }
+                onRenameChannel={dialogs.openRenameChannel}
                 onReorder={(orderedChannelIds) =>
                   dialogs.reorderChannelSection("text", orderedChannelIds)
                 }
@@ -371,6 +426,7 @@ export function WorkspaceSidebar() {
                 onAddChannel={() =>
                   dialogs.openCreateChannel("voice", "Voice Channels")
                 }
+                onRenameChannel={dialogs.openRenameChannel}
                 onReorder={(orderedChannelIds) =>
                   dialogs.reorderChannelSection("voice", orderedChannelIds)
                 }
@@ -521,6 +577,7 @@ function ChannelSection({
   label,
   onAddChannel,
   onReorder,
+  onRenameChannel,
   onSelect,
 }: {
   activeChannelId: Id<"channels"> | null;
@@ -531,6 +588,7 @@ function ChannelSection({
   label: string;
   onAddChannel: () => void;
   onReorder: (orderedChannelIds: Id<"channels">[]) => Promise<boolean>;
+  onRenameChannel: (channel: Doc<"channels">) => void;
   onSelect: (channel: Doc<"channels">) => Promise<void> | void;
 }) {
   const [orderedChannels, setOrderedChannels] = useState(channels);
@@ -645,6 +703,7 @@ function ChannelSection({
                           icon={Icon}
                           isDragging={snapshot.isDragging}
                           now={now}
+                          onRenameChannel={onRenameChannel}
                           onSelect={onSelect}
                           showVoicePresence={typeof counts !== "undefined"}
                           startedAt={callStartedAt}
@@ -691,14 +750,18 @@ function DroppableChannelList({
 }) {
   "use no memo";
 
+  const { droppableContextId, droppableId, innerRef, placeholder } =
+    getDroppableBindings(droppableProvided);
+
   return (
     <div
-      {...droppableProvided.droppableProps}
       className="flex flex-col gap-1"
-      ref={droppableProvided.innerRef}
+      data-rfd-droppable-context-id={droppableContextId}
+      data-rfd-droppable-id={droppableId}
+      ref={innerRef}
     >
       {children}
-      {droppableProvided.placeholder}
+      {placeholder}
     </div>
   );
 }
@@ -713,6 +776,7 @@ function ChannelRow({
   icon: Icon,
   isDragging,
   now,
+  onRenameChannel,
   onSelect,
   showVoicePresence,
   startedAt,
@@ -727,6 +791,7 @@ function ChannelRow({
   icon: typeof HashIcon;
   isDragging: boolean;
   now: number;
+  onRenameChannel: (channel: Doc<"channels">) => void;
   onSelect: (channel: Doc<"channels">) => Promise<void> | void;
   showVoicePresence: boolean;
   startedAt: number | null;
@@ -734,8 +799,24 @@ function ChannelRow({
 }) {
   "use no memo";
 
-  return (
+  const {
+    ariaDescribedBy,
+    dataDraggableContextId,
+    dataDraggableId,
+    dataDragHandleContextId,
+    dataDragHandleDraggableId,
+    draggable,
+    innerRef,
+    onDragStart,
+    onTransitionEnd,
+    role,
+    style,
+    tabIndex,
+  } = getDraggableBindings(draggableProvided, canManageChannels);
+
+  const channelButton = (
     <Button
+      aria-describedby={ariaDescribedBy}
       className={cn(
         listItemClassName,
         "flex-col items-stretch gap-1",
@@ -745,13 +826,21 @@ function ChannelRow({
         canManageChannels && "cursor-grab active:cursor-grabbing",
         isDragging && "border border-sidebar-border bg-sidebar shadow-lg"
       )}
+      data-rfd-drag-handle-context-id={dataDragHandleContextId}
+      data-rfd-drag-handle-draggable-id={dataDragHandleDraggableId}
+      data-rfd-draggable-context-id={dataDraggableContextId}
+      data-rfd-draggable-id={dataDraggableId}
+      draggable={draggable}
       onClick={async () => {
         await onSelect(channel);
       }}
-      ref={draggableProvided.innerRef}
+      onDragStart={onDragStart}
+      onTransitionEnd={onTransitionEnd}
+      ref={innerRef}
+      role={role}
       size="none"
-      {...draggableProvided.draggableProps}
-      {...(canManageChannels ? draggableProvided.dragHandleProps : {})}
+      style={style}
+      tabIndex={tabIndex}
       type="button"
       variant="plain"
     >
@@ -777,6 +866,27 @@ function ChannelRow({
         <VoiceParticipantStrip members={channelMembers} />
       ) : null}
     </Button>
+  );
+
+  if (!canManageChannels) {
+    return channelButton;
+  }
+
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger>{channelButton}</ContextMenuTrigger>
+      <ContextMenuContent className="w-52 rounded-xl border border-sidebar-border bg-popover p-2">
+        <ContextMenuGroup>
+          <ContextMenuItem
+            className="min-h-10 rounded-lg px-3 py-2 font-medium"
+            onClick={() => onRenameChannel(channel)}
+          >
+            <PencilIcon />
+            Rename channel
+          </ContextMenuItem>
+        </ContextMenuGroup>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 }
 

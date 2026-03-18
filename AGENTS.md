@@ -126,3 +126,4 @@ Most formatting and common issues are automatically fixed by Biome. Run `npm exe
 
 Use bun as the package manager of choice
 Never use the raw html `<button>`, use the shadcn `<Button>` component
+When checking the code, don't just use ultracite, also typecheck with the `typecheck` script

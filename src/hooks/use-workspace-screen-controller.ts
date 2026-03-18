@@ -204,6 +204,7 @@ export function useWorkspaceScreenController() {
   const removeFriend = useMutation(api.friends.removeFriend);
   const createInvite = useMutation(api.invites.create);
   const createChannel = useMutation(api.channels.create);
+  const updateChannel = useMutation(api.channels.update);
   const reorderChannels = useMutation(api.channels.reorder);
   const sendMessage = useMutation(api.messages.send);
   const editMessage = useMutation(api.messages.edit);
@@ -242,12 +243,19 @@ export function useWorkspaceScreenController() {
   const [friendHandleDraft, setFriendHandleDraft] = useState("");
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false);
+  const [isRenameChannelOpen, setIsRenameChannelOpen] = useState(false);
   const [channelCategoryLabelDraft, setChannelCategoryLabelDraft] =
     useState("Text Channels");
   const [channelNameDraft, setChannelNameDraft] = useState("");
   const [channelKindDraft, setChannelKindDraft] = useState<ChannelKind>("text");
   const [channelAccessDraft, setChannelAccessDraft] =
     useState<ChannelAccess>("public");
+  const [renameChannelDraft, setRenameChannelDraft] = useState("");
+  const [renameChannelId, setRenameChannelId] = useState<Id<"channels"> | null>(
+    null
+  );
+  const [renameChannelKind, setRenameChannelKind] =
+    useState<ChannelKind>("text");
   const [lastFriendsAreaLocation, setLastFriendsAreaLocation] =
     useState<FriendsAreaLocation>({
       kind: "home",
@@ -507,6 +515,16 @@ export function useWorkspaceScreenController() {
     setJoinServerInviteError(null);
   }, [isCreateServerOpen]);
 
+  useEffect(() => {
+    if (isRenameChannelOpen) {
+      return;
+    }
+
+    setRenameChannelDraft("");
+    setRenameChannelId(null);
+    setRenameChannelKind("text");
+  }, [isRenameChannelOpen]);
+
   const moveToChannel = async (targetChannelId: Id<"channels">) => {
     const targetChannel =
       activeCallWorkspace?.channels.find(
@@ -685,6 +703,44 @@ export function useWorkspaceScreenController() {
     setChannelNameDraft("");
     setChannelAccessDraft("public");
     setIsCreateChannelOpen(true);
+  };
+
+  const openRenameChannel = (channel: Doc<"channels">) => {
+    setRenameChannelId(channel._id);
+    setRenameChannelKind(channel.kind);
+    setRenameChannelDraft(channel.name);
+    setIsRenameChannelOpen(true);
+  };
+
+  const submitRenameChannel = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!(activeServerId && workspace && renameChannelId)) {
+      return;
+    }
+
+    const channel =
+      workspace.channels.find((entry) => entry._id === renameChannelId) ?? null;
+
+    if (!channel) {
+      toast.error("Channel not found.");
+      return;
+    }
+
+    try {
+      await updateChannel({
+        access: channel.access,
+        channelId: renameChannelId,
+        name:
+          channel.kind === "text"
+            ? normalizeTextChannelName(renameChannelDraft)
+            : renameChannelDraft,
+      });
+      setIsRenameChannelOpen(false);
+      toast.success("Channel renamed.");
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    }
   };
 
   const reorderChannelSection = async (
@@ -1092,6 +1148,7 @@ export function useWorkspaceScreenController() {
     isFriendsView,
     isInviteOpen,
     isLeftSidebarCollapsed,
+    isRenameChannelOpen,
     isRightSidebarCollapsed,
     joinVoiceChannel,
     joinServerInviteDraft,
@@ -1105,9 +1162,12 @@ export function useWorkspaceScreenController() {
     navigateToFriendsArea,
     openConversation,
     openCreateChannel,
+    openRenameChannel,
     permissions,
     removeFriendship,
     rightSidebarRef,
+    renameChannelDraft,
+    renameChannelKind,
     routeChannelId,
     reorderChannelSection,
     sendActiveMessage,
@@ -1123,10 +1183,12 @@ export function useWorkspaceScreenController() {
     setFriendHandleDraft,
     setFriendsTab,
     setHandleDraft: setOnboardingHandleDraft,
+    setRenameChannelDraft,
     setIsCreateChannelOpen,
     setIsCreateServerOpen,
     setIsInviteOpen,
     setIsLeftSidebarCollapsed,
+    setIsRenameChannelOpen,
     setIsRightSidebarCollapsed,
     setJoinServerInviteDraft,
     setJoinServerInviteError,
@@ -1142,6 +1204,7 @@ export function useWorkspaceScreenController() {
     submitFriendRequest,
     submitJoinServer,
     submitOnboarding,
+    submitRenameChannel,
     textChannels,
     toggleDeafen,
     toggleLeftSidebar,

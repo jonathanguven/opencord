@@ -4,11 +4,11 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 
 import "./index.css";
+import App from "@/app.tsx";
 import { ThemeProvider } from "@/components/theme-provider.tsx";
 import { Toaster } from "@/components/ui/sonner.tsx";
 import { TooltipProvider } from "@/components/ui/tooltip.tsx";
 import { convex } from "@/lib/convex.ts";
-import App from "./App.tsx";
 
 const rootElement = document.getElementById("root");
 
