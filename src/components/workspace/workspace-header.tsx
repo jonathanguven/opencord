@@ -1,4 +1,4 @@
-import { AudioLinesIcon, CopyIcon } from "lucide-react";
+import { AudioLinesIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -41,13 +41,13 @@ export function WorkspaceHeader() {
   }
 
   return (
-    <header className="flex items-center justify-between gap-4 border-border/60 border-b px-4 py-3">
+    <header className="flex items-center justify-between gap-3 border-border/60 border-b px-3 py-2">
       <div className="flex min-w-0 items-start gap-2">
         <div className="min-w-0">
-          <div className="truncate font-semibold text-lg">
+          <div className="truncate font-semibold text-base">
             {view.headerTitle}
           </div>
-          <div className="truncate text-muted-foreground text-sm">
+          <div className="truncate text-muted-foreground text-xs">
             {view.headerSubtitle}
           </div>
         </div>
@@ -66,16 +66,15 @@ export function WorkspaceHeader() {
             {callActionLabel}
           </Button>
         ) : null}
-        {view.canCreateServerInvites ? (
-          <Button onClick={() => ui.setIsInviteOpen(true)} variant="outline">
-            <CopyIcon data-icon="inline-start" />
-            Invite
-          </Button>
-        ) : null}
         <Tooltip>
           <TooltipTrigger
             onClick={ui.toggleRightSidebar}
-            render={<Button size="icon-sm" variant="ghost" />}
+            render={
+              <button
+                className="inline-flex size-7 items-center justify-center rounded-[min(var(--radius-md),12px)] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                type="button"
+              />
+            }
           >
             {view.isFriendsView ? <UserProfileIcon /> : <MemberListIcon />}
           </TooltipTrigger>

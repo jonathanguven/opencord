@@ -42,7 +42,7 @@ export function ServerChannelPage() {
           messages={thread.messages}
         />
       </ScrollArea>
-      <div className="border-border/60 border-t p-4">
+      <div className="border-border/60 border-t px-3 py-2.5">
         <MessageComposer
           draft={thread.messageDraft}
           onChange={thread.setMessageDraft}

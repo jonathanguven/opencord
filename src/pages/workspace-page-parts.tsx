@@ -49,13 +49,13 @@ export function MessageFeed({
 }: MessageFeedProps) {
   if (!messages) {
     return (
-      <div className="flex flex-col gap-3 p-4">
+      <div className="flex flex-col gap-2.5 p-3">
         {MESSAGE_SKELETON_KEYS.map((key) => (
-          <div className="flex gap-3" key={key}>
-            <Skeleton className="size-10 rounded-full" />
+          <div className="flex gap-2.5" key={key}>
+            <Skeleton className="size-9 rounded-full" />
             <div className="flex flex-1 flex-col gap-2">
               <Skeleton className="h-4 w-32 rounded-lg" />
-              <Skeleton className="h-16 w-full rounded-xl" />
+              <Skeleton className="h-14 w-full rounded-xl" />
             </div>
           </div>
         ))}
@@ -65,7 +65,7 @@ export function MessageFeed({
 
   if (!messages.length) {
     return (
-      <div className="flex h-full items-center justify-center p-6">
+      <div className="flex h-full items-center justify-center p-4">
         <Empty className="max-w-xl border-border/60 bg-muted/20">
           <EmptyHeader>
             <EmptyMedia variant="icon">
@@ -80,13 +80,13 @@ export function MessageFeed({
   }
 
   return (
-    <div className="flex flex-col gap-3 p-4">
+    <div className="flex flex-col gap-2 p-3">
       {messages.map((message) => (
         <div
-          className="flex gap-3 rounded-2xl border border-transparent px-1 py-2 hover:border-border/50 hover:bg-muted/20"
+          className="flex gap-2.5 rounded-xl border border-transparent px-1 py-1.5 hover:border-border/50 hover:bg-muted/20"
           key={message._id}
         >
-          <Avatar>
+          <Avatar className="size-9">
             <AvatarImage src={message.author?.avatarUrl ?? undefined} />
             <AvatarFallback>
               {getInitials(getDisplayName(message.author))}
@@ -94,14 +94,14 @@ export function MessageFeed({
           </Avatar>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-medium">
+              <span className="font-medium text-sm">
                 {getDisplayName(message.author)}
               </span>
               <span className="text-muted-foreground text-xs">
                 {formatTimestamp(message.createdAt)}
               </span>
             </div>
-            <p className="whitespace-pre-wrap text-foreground/95 text-sm leading-6">
+            <p className="whitespace-pre-wrap text-foreground/95 text-sm leading-5">
               {message.body}
             </p>
           </div>
@@ -118,7 +118,7 @@ export function MessageComposer({
   placeholder,
 }: MessageComposerProps) {
   return (
-    <InputGroup className="min-h-14 items-end">
+    <InputGroup className="min-h-12 items-end">
       <InputGroupTextarea
         maxLength={4000}
         onChange={(event) => onChange(event.target.value)}
@@ -129,7 +129,7 @@ export function MessageComposer({
           }
         }}
         placeholder={placeholder}
-        rows={2}
+        rows={1}
         value={draft}
       />
       <InputGroupAddon align="inline-end">

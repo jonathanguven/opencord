@@ -1,6 +1,5 @@
 import {
   ChevronDownIcon,
-  CopyIcon,
   HashIcon,
   HeadphonesIcon,
   LogOutIcon,
@@ -64,7 +63,7 @@ const railButtonClassName =
   "size-12 rounded-[1.35rem] border border-sidebar-border bg-sidebar text-sidebar-foreground transition-all hover:bg-accent hover:text-accent-foreground";
 
 const listItemClassName =
-  "flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors";
+  "flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-colors";
 
 interface DiscordDmRowProps {
   active?: boolean;
@@ -262,54 +261,65 @@ export function WorkspaceSidebar() {
           </ScrollArea>
         ) : (
           <ScrollArea className="h-full">
-            <div className="flex flex-col gap-4 p-3">
-              <div className="rounded-2xl border border-sidebar-border bg-accent/60 p-4 shadow-[inset_0_1px_0_rgb(255_255_255_/_0.03)]">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="truncate font-bold text-foreground text-lg">
-                      {view.activeServer?.name ?? "Server"}
-                    </div>
-                    <div className="mt-1 line-clamp-2 text-muted-foreground text-sm">
-                      {view.activeServer?.description ||
-                        "Flat channels, invite-only access, and reactive voice presence."}
-                    </div>
-                  </div>
+            <div className="flex flex-col gap-3 p-2.5">
+              <div className="flex items-center gap-2">
+                <div className="min-w-0 flex-1">
                   <DropdownMenu>
                     <DropdownMenuTrigger
                       render={
-                        <Button
-                          className="rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground"
-                          size="icon-sm"
-                          variant="ghost"
+                        <button
+                          className="inline-flex h-8 w-auto max-w-full items-center rounded-xl px-2.5 font-semibold text-[0.95rem] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground data-[popup-open]:bg-accent data-[popup-open]:text-foreground"
+                          type="button"
                         />
                       }
                     >
-                      <Settings2Icon />
+                      <span className="truncate">
+                        {view.activeServer?.name ?? "Server"}
+                      </span>
+                      <ChevronDownIcon className="ml-1 size-4 shrink-0 opacity-75 transition-transform group-aria-expanded/button:rotate-180" />
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Server actions</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
+                    <DropdownMenuContent
+                      align="start"
+                      className="w-64 rounded-2xl border border-sidebar-border bg-popover p-2"
+                      sideOffset={8}
+                    >
                       <DropdownMenuGroup>
                         <DropdownMenuItem
+                          className="min-h-10 justify-between rounded-xl px-3 py-2 font-medium"
                           onClick={() => ui.setIsInviteOpen(true)}
                         >
-                          <CopyIcon />
-                          Create invite
+                          <span>Invite to Server</span>
+                          <InviteToServerIcon className="size-4 text-muted-foreground" />
                         </DropdownMenuItem>
-                        {view.permissions.manageChannels ||
-                        view.permissions.admin ? (
-                          <DropdownMenuItem
-                            onClick={() => ui.setIsCreateChannelOpen(true)}
-                          >
-                            <PlusIcon />
-                            New channel
-                          </DropdownMenuItem>
-                        ) : null}
+                        <DropdownMenuItem className="min-h-10 justify-between rounded-xl px-3 py-2 font-medium">
+                          <span>Server Settings</span>
+                          <Settings2Icon className="size-4 text-muted-foreground" />
+                        </DropdownMenuItem>
                       </DropdownMenuGroup>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
+
+                {view.canCreateServerInvites ? (
+                  <Tooltip>
+                    <TooltipTrigger
+                      onClick={() => ui.setIsInviteOpen(true)}
+                      render={
+                        <button
+                          className="ml-auto inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                          type="button"
+                        />
+                      }
+                    >
+                      <InviteToServerIcon className="size-5" />
+                      <span className="sr-only">Invite to server</span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Invite to Server</TooltipContent>
+                  </Tooltip>
+                ) : null}
               </div>
+
+              <div className="border-sidebar-border border-b" />
 
               <ChannelSection
                 activeChannelId={view.routeChannelId}
@@ -403,8 +413,8 @@ export function WorkspaceSidebar() {
                   </DropdownMenuItem>
                   {view.canCreateServerInvites ? (
                     <DropdownMenuItem onClick={() => ui.setIsInviteOpen(true)}>
-                      <CopyIcon />
-                      Create invite
+                      <InviteToServerIcon className="size-4" />
+                      Invite to Server
                     </DropdownMenuItem>
                   ) : null}
                   <DropdownMenuItem onClick={navigation.handleSignOut}>
@@ -442,7 +452,7 @@ function DiscordDmRow({
       type="button"
     >
       <div className="relative shrink-0">
-        <Avatar className="size-10">
+        <Avatar className="size-9">
           <AvatarImage src={avatarUrl ?? undefined} />
           <AvatarFallback className="bg-primary/20 text-primary-foreground">
             {getInitials(displayName)}
@@ -456,7 +466,7 @@ function DiscordDmRow({
         />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="truncate font-semibold text-[0.98rem]">
+        <div className="truncate font-semibold text-[0.94rem]">
           {displayName}
         </div>
         <div className="truncate text-muted-foreground text-xs">{subtitle}</div>
@@ -481,8 +491,8 @@ function ChannelSection({
   onSelect: (channelId: Id<"channels">) => void;
 }) {
   return (
-    <div className="flex flex-col gap-2">
-      <div className="px-2 font-black text-muted-foreground text-xs uppercase tracking-[0.16em]">
+    <div className="flex flex-col gap-1.5">
+      <div className="px-2 font-black text-[0.65rem] text-muted-foreground uppercase tracking-[0.16em]">
         {label}
       </div>
       {channels.length ? (
@@ -521,7 +531,7 @@ function ChannelSection({
               type="button"
             >
               <Icon className="size-4 shrink-0" />
-              <span className="flex-1 truncate font-semibold text-[0.95rem]">
+              <span className="flex-1 truncate font-semibold text-[0.9rem]">
                 {channel.kind === "text" ? `# ${channel.name}` : channel.name}
               </span>
               <div className="shrink-0">{trailingContent}</div>
@@ -539,5 +549,27 @@ function ChannelSection({
         </Empty>
       )}
     </div>
+  );
+}
+
+function InviteToServerIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      role="img"
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M14.5 8a3 3 0 1 0-2.7-4.3c-.2.4.06.86.44 1.12a5 5 0 0 1 2.14 3.08c.01.06.06.1.12.1ZM16.62 13.17c-.22.29-.65.37-.92.14-.34-.3-.7-.57-1.09-.82-.52-.33-.7-1.05-.47-1.63.11-.27.2-.57.26-.87.11-.54.55-1 1.1-.92 1.6.2 3.04.92 4.15 1.98.3.27-.25.95-.65.95a3 3 0 0 0-2.38 1.17ZM15.19 15.61c.13.16.02.39-.19.39a3 3 0 0 0-1.52 5.59c.2.12.26.41.02.41h-8a.5.5 0 0 1-.5-.5v-2.1c0-.25-.31-.33-.42-.1-.32.67-.67 1.58-.88 2.54a.2.2 0 0 1-.2.16A1.5 1.5 0 0 1 2 20.5a7.5 7.5 0 0 1 13.19-4.89ZM9.5 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM15.5 22Z"
+        fill="currentColor"
+      />
+      <path
+        d="M19 14a1 1 0 0 1 1 1v3h3a1 1 0 0 1 0 2h-3v3a1 1 0 0 1-2 0v-3h-3a1 1 0 1 1 0-2h3v-3a1 1 0 0 1 1-1Z"
+        fill="currentColor"
+      />
+    </svg>
   );
 }
