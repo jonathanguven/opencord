@@ -16,6 +16,7 @@ import type {
 } from "@/components/workspace/workspace-types";
 import { useCloudflareSfuCall } from "@/hooks/use-cloudflare-sfu-call";
 import { getErrorMessage } from "@/lib/errors";
+import { normalizeHandleInput, validateHandle } from "@/lib/handles";
 import { getDisplayName } from "@/lib/presentation";
 import {
   buildInviteLink,
@@ -473,12 +474,20 @@ export function useWorkspaceScreenController() {
 
   const submitOnboarding = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setHandleError(null);
+    const normalizedHandle = normalizeHandleInput(handleDraft);
+    const nextHandleError = validateHandle(normalizedHandle);
+
+    setHandleDraft(normalizedHandle);
+    setHandleError(nextHandleError);
+
+    if (nextHandleError) {
+      return;
+    }
 
     try {
       await bootstrapUser({
         displayName: displayNameDraft,
-        handle: handleDraft,
+        handle: normalizedHandle,
       });
       toast.success("Profile ready.");
     } catch (error) {
@@ -738,6 +747,14 @@ export function useWorkspaceScreenController() {
     toast("Screen share is not part of the SFU audio rollout yet.");
   };
 
+  const setOnboardingHandleDraft = (value: string) => {
+    const normalizedValue = normalizeHandleInput(value);
+    setHandleDraft(normalizedValue);
+    if (handleError) {
+      setHandleError(null);
+    }
+  };
+
   const toggleLeftSidebar = () => {
     togglePanel(
       leftSidebarRef,
@@ -885,7 +902,7 @@ export function useWorkspaceScreenController() {
     setDisplayNameDraft,
     setFriendHandleDraft,
     setFriendsTab,
-    setHandleDraft,
+    setHandleDraft: setOnboardingHandleDraft,
     setIsCreateChannelOpen,
     setIsCreateServerOpen,
     setIsInviteOpen,

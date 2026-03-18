@@ -88,9 +88,13 @@ export function OnboardingDialog({
                   </InputGroupAddon>
                   <InputGroupInput
                     aria-invalid={Boolean(handleError)}
+                    autoCapitalize="none"
+                    autoComplete="off"
                     id="handle"
+                    maxLength={24}
                     onChange={(event) => onHandleChange(event.target.value)}
-                    placeholder="opencord-user"
+                    placeholder="opencord_user"
+                    spellCheck={false}
                     value={handleDraft}
                   />
                 </InputGroup>
