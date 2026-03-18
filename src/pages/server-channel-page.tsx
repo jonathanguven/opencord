@@ -38,15 +38,22 @@ export function ServerChannelPage() {
     <div className="flex h-full flex-col">
       <ScrollArea className="min-h-0 flex-1">
         <MessageFeed
+          currentUserId={view.current?.user?._id}
+          editingMessageId={thread.editingMessageId}
           emptyDescription={`Be the first to post in ${getChannelDisplayName(activeChannel)}.`}
           emptyTitle="No messages yet"
           messages={thread.messages}
+          onDeleteMessage={thread.deleteOwnMessage}
+          onEditMessage={thread.editOwnMessage}
         />
       </ScrollArea>
       <div className="border-border/60 border-t px-3 py-2.5">
         <MessageComposer
           draft={thread.messageDraft}
+          editingMessageId={thread.editingMessageId}
+          onCancelEdit={thread.cancelEditingMessage}
           onChange={thread.setMessageDraft}
+          onEditLatestMessage={thread.editLatestOwnMessage}
           onSend={thread.sendActiveMessage}
           placeholder={`Message ${getChannelDisplayName(activeChannel)}`}
         />

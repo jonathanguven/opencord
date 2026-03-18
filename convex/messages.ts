@@ -93,3 +93,57 @@ export const send = mutation({
     return messageId;
   },
 });
+
+const requireOwnedMessage = async (
+  ctx: MutationCtx,
+  messageId: Id<"messages">,
+  userId: Id<"users">
+) => {
+  const message = await ctx.db.get(messageId);
+  if (!message) {
+    throw new Error("Message not found.");
+  }
+
+  await ensureThreadAccess(ctx, userId, {
+    threadId: message.threadId as Id<"channels"> | Id<"conversations">,
+    threadType: message.threadType,
+  });
+
+  if (message.authorId !== userId) {
+    throw new Error("You can only change your own messages.");
+  }
+
+  return message;
+};
+
+export const edit = mutation({
+  args: {
+    messageId: v.id("messages"),
+    body: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const { user } = await requireCurrentUser(ctx);
+    const body = args.body.trim();
+    if (!body) {
+      throw new Error("Message body cannot be empty.");
+    }
+
+    await requireOwnedMessage(ctx, args.messageId, user._id);
+
+    await ctx.db.patch(args.messageId, {
+      body,
+      editedAt: Date.now(),
+    });
+  },
+});
+
+export const remove = mutation({
+  args: {
+    messageId: v.id("messages"),
+  },
+  handler: async (ctx, args) => {
+    const { user } = await requireCurrentUser(ctx);
+    await requireOwnedMessage(ctx, args.messageId, user._id);
+    await ctx.db.delete(args.messageId);
+  },
+});

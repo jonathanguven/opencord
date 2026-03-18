@@ -98,7 +98,15 @@ type WorkspaceFriendsContextValue = Pick<
 
 type WorkspaceThreadContextValue = Pick<
   WorkspaceController,
-  "messages" | "messageDraft" | "sendActiveMessage" | "setMessageDraft"
+  | "cancelEditingMessage"
+  | "deleteOwnMessage"
+  | "editLatestOwnMessage"
+  | "editingMessageId"
+  | "editOwnMessage"
+  | "messages"
+  | "messageDraft"
+  | "sendActiveMessage"
+  | "setMessageDraft"
 >;
 
 type WorkspaceCallContextValue = Pick<
@@ -164,9 +172,14 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
     channelNameDraft,
     conversations,
     copyServerInviteLink,
+    cancelEditingMessage,
     current,
+    deleteOwnMessage,
     declineFriendRequest,
     displayNameDraft,
+    editLatestOwnMessage,
+    editingMessageId,
+    editOwnMessage,
     forceDeafenMember,
     forceMuteMember,
     friendHandleDraft,
@@ -405,12 +418,27 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
 
   const threadValue = useMemo(
     () => ({
+      cancelEditingMessage,
+      deleteOwnMessage,
+      editLatestOwnMessage,
+      editingMessageId,
+      editOwnMessage,
       messages,
       messageDraft,
       sendActiveMessage,
       setMessageDraft,
     }),
-    [messages, messageDraft, sendActiveMessage, setMessageDraft]
+    [
+      cancelEditingMessage,
+      deleteOwnMessage,
+      editLatestOwnMessage,
+      editingMessageId,
+      editOwnMessage,
+      messages,
+      messageDraft,
+      sendActiveMessage,
+      setMessageDraft,
+    ]
   );
 
   const callValue = useMemo(

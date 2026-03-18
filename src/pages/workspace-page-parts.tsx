@@ -1,4 +1,10 @@
-import { ChevronRightIcon, MessageSquareIcon } from "lucide-react";
+import {
+  ChevronRightIcon,
+  MessageSquareIcon,
+  PencilIcon,
+  Trash2Icon,
+  XIcon,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -16,6 +22,11 @@ import {
   InputGroupTextarea,
 } from "@/components/ui/input-group";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { MessageListItem } from "@/components/workspace/workspace-types";
 import { getDisplayName, getInitials } from "@/lib/presentation";
 
@@ -33,22 +44,33 @@ const MESSAGE_SKELETON_KEYS = [
 const MESSAGE_LOADING_SKELETON_DELAY_MS = 1000;
 
 interface MessageFeedProps {
+  currentUserId?: string | null;
+  editingMessageId?: string | null;
   emptyDescription: string;
   emptyTitle: string;
   messages: MessageListItem[] | undefined;
+  onDeleteMessage: (messageId: MessageListItem["_id"]) => void;
+  onEditMessage: (messageId: MessageListItem["_id"]) => void;
 }
 
 interface MessageComposerProps {
   draft: string;
+  editingMessageId?: string | null;
+  onCancelEdit: () => void;
   onChange: (value: string) => void;
+  onEditLatestMessage: () => boolean;
   onSend: () => void;
   placeholder: string;
 }
 
 export function MessageFeed({
+  currentUserId,
+  editingMessageId,
   emptyDescription,
   emptyTitle,
   messages,
+  onDeleteMessage,
+  onEditMessage,
 }: MessageFeedProps) {
   const shouldShowLoadingSkeleton = useDelayedLoadingState(
     typeof messages === "undefined",
@@ -98,9 +120,43 @@ export function MessageFeed({
       <div className="flex flex-col gap-2">
         {messages.map((message) => (
           <div
-            className="flex gap-2.5 rounded-xl border border-transparent px-1 py-1.5 hover:border-border/50 hover:bg-muted/20"
+            className="group relative flex gap-2.5 px-1 py-1.5"
             key={message._id}
           >
+            {message.authorId === currentUserId ? (
+              <div className="absolute top-0 right-1 z-10 flex -translate-y-1/2 items-center gap-1 rounded-lg border border-border/70 bg-muted/95 p-1 opacity-0 shadow-sm transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <button
+                        aria-label="Edit message"
+                        className="group/edit inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-all hover:scale-105 hover:bg-background/80 hover:text-foreground"
+                        onClick={() => onEditMessage(message._id)}
+                        type="button"
+                      />
+                    }
+                  >
+                    <PencilIcon className="size-3.5 transition-all group-hover/edit:scale-110 group-hover/edit:[stroke-width:2.4]" />
+                  </TooltipTrigger>
+                  <TooltipContent>Edit</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <button
+                        aria-label="Delete message"
+                        className="group/delete inline-flex size-7 items-center justify-center rounded-md text-destructive transition-all hover:scale-105 hover:bg-destructive/10 hover:text-destructive"
+                        onClick={() => onDeleteMessage(message._id)}
+                        type="button"
+                      />
+                    }
+                  >
+                    <Trash2Icon className="size-3.5 transition-all group-hover/delete:scale-110 group-hover/delete:[stroke-width:2.4]" />
+                  </TooltipTrigger>
+                  <TooltipContent>Delete</TooltipContent>
+                </Tooltip>
+              </div>
+            ) : null}
             <Avatar className="size-9">
               <AvatarImage src={message.author?.avatarUrl ?? undefined} />
               <AvatarFallback>
@@ -117,8 +173,18 @@ export function MessageFeed({
                 </span>
               </div>
               <p className="whitespace-pre-wrap text-foreground/95 text-sm leading-5">
-                {message.body}
+                <span>{message.body}</span>
+                {message.editedAt ? (
+                  <span className="ml-1.5 inline-block text-[11px] text-muted-foreground/80">
+                    (edited)
+                  </span>
+                ) : null}
               </p>
+              {editingMessageId === message._id ? (
+                <p className="mt-1 text-[11px] text-primary">
+                  Editing this message
+                </p>
+              ) : null}
             </div>
           </div>
         ))}
@@ -147,17 +213,39 @@ function useDelayedLoadingState(isLoading: boolean, delayMs: number) {
 }
 
 export function MessageComposer({
+  editingMessageId,
   draft,
+  onCancelEdit,
   onChange,
+  onEditLatestMessage,
   onSend,
   placeholder,
 }: MessageComposerProps) {
   return (
-    <InputGroup className="min-h-12 items-end">
+    <InputGroup className="relative min-h-12 items-end">
       <InputGroupTextarea
         maxLength={4000}
         onChange={(event) => onChange(event.target.value)}
         onKeyDown={(event) => {
+          if (event.key === "Escape" && editingMessageId) {
+            event.preventDefault();
+            onCancelEdit();
+            return;
+          }
+
+          if (
+            event.key === "ArrowUp" &&
+            !event.shiftKey &&
+            !draft.trim() &&
+            event.currentTarget.selectionStart === 0 &&
+            event.currentTarget.selectionEnd === 0
+          ) {
+            if (onEditLatestMessage()) {
+              event.preventDefault();
+            }
+            return;
+          }
+
           if (event.key === "Enter" && !event.shiftKey) {
             event.preventDefault();
             onSend();
@@ -168,6 +256,16 @@ export function MessageComposer({
         value={draft}
       />
       <InputGroupAddon align="inline-end">
+        {editingMessageId ? (
+          <InputGroupButton
+            aria-label="Cancel editing"
+            onClick={onCancelEdit}
+            size="icon-sm"
+            variant="ghost"
+          >
+            <XIcon />
+          </InputGroupButton>
+        ) : null}
         <InputGroupButton
           disabled={!draft.trim()}
           onClick={onSend}
@@ -176,6 +274,18 @@ export function MessageComposer({
           <ChevronRightIcon />
         </InputGroupButton>
       </InputGroupAddon>
+      {editingMessageId ? (
+        <div className="pointer-events-none absolute inset-x-3 -top-6 flex items-center justify-between text-[11px] text-muted-foreground">
+          <span>Editing message</span>
+          <button
+            className="pointer-events-auto text-muted-foreground transition-colors hover:text-foreground"
+            onClick={onCancelEdit}
+            type="button"
+          >
+            Cancel
+          </button>
+        </div>
+      ) : null}
     </InputGroup>
   );
 }

@@ -194,6 +194,8 @@ export function useWorkspaceScreenController() {
   const createChannel = useMutation(api.channels.create);
   const reorderChannels = useMutation(api.channels.reorder);
   const sendMessage = useMutation(api.messages.send);
+  const editMessage = useMutation(api.messages.edit);
+  const removeMessage = useMutation(api.messages.remove);
   const startDmCall = useMutation(api.calls.startDmCall);
   const endDmCall = useMutation(api.calls.endDmCall);
   const joinDmCall = useAction(api.calls.joinDmCall);
@@ -210,6 +212,8 @@ export function useWorkspaceScreenController() {
   const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(false);
   const [friendsTab, setFriendsTab] = useState("all");
   const [messageDraft, setMessageDraft] = useState("");
+  const [editingMessageId, setEditingMessageId] =
+    useState<Id<"messages"> | null>(null);
   const [displayNameDraft, setDisplayNameDraft] = useState("");
   const [handleDraft, setHandleDraft] = useState("");
   const [handleError, setHandleError] = useState<string | null>(null);
@@ -280,6 +284,9 @@ export function useWorkspaceScreenController() {
     activeConversation,
     isFriendsView,
   });
+  const activeThreadKey = activeThread
+    ? `${activeThread.threadType}:${activeThread.threadId}`
+    : null;
 
   const messages = useQuery(
     api.messages.list,
@@ -329,6 +336,25 @@ export function useWorkspaceScreenController() {
     setDisplayNameDraft((value) => value || getDisplayName(user));
     setHandleDraft((value) => value || user.handle || "");
   }, [current]);
+
+  useEffect(() => {
+    if (activeThreadKey === null) {
+      setEditingMessageId(null);
+      return;
+    }
+
+    setEditingMessageId(null);
+  }, [activeThreadKey]);
+
+  useEffect(() => {
+    if (
+      editingMessageId &&
+      !messages?.some((message) => message._id === editingMessageId)
+    ) {
+      setEditingMessageId(null);
+      setMessageDraft("");
+    }
+  }, [editingMessageId, messages]);
 
   useEffect(() => {
     if (
@@ -606,12 +632,70 @@ export function useWorkspaceScreenController() {
     }
 
     try {
-      await sendMessage({
-        body: messageDraft,
-        threadId: activeThread.threadId,
-        threadType: activeThread.threadType,
-      });
+      if (editingMessageId) {
+        await editMessage({
+          body: messageDraft,
+          messageId: editingMessageId,
+        });
+        setEditingMessageId(null);
+      } else {
+        await sendMessage({
+          body: messageDraft,
+          threadId: activeThread.threadId,
+          threadType: activeThread.threadType,
+        });
+      }
       setMessageDraft("");
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    }
+  };
+
+  const editOwnMessage = (messageId: Id<"messages">) => {
+    const message = messages?.find((entry) => entry._id === messageId);
+    if (!(message && current?.user?._id === message.authorId)) {
+      return false;
+    }
+
+    setEditingMessageId(message._id);
+    setMessageDraft(message.body);
+    return true;
+  };
+
+  const editLatestOwnMessage = () => {
+    if (!current?.user?._id) {
+      return false;
+    }
+
+    const latestOwnMessage = [...(messages ?? [])]
+      .reverse()
+      .find((message) => message.authorId === current.user._id);
+
+    if (!latestOwnMessage) {
+      return false;
+    }
+
+    return editOwnMessage(latestOwnMessage._id);
+  };
+
+  const cancelEditingMessage = () => {
+    setEditingMessageId(null);
+    setMessageDraft("");
+  };
+
+  const deleteOwnMessage = async (messageId: Id<"messages">) => {
+    const message = messages?.find((entry) => entry._id === messageId);
+    if (!(message && current?.user?._id === message.authorId)) {
+      return;
+    }
+
+    try {
+      await removeMessage({ messageId });
+      if (editingMessageId === messageId) {
+        setEditingMessageId(null);
+        setMessageDraft("");
+      }
+      toast.success("Message deleted.");
     } catch (error) {
       toast.error(getErrorMessage(error));
     }
@@ -881,9 +965,14 @@ export function useWorkspaceScreenController() {
     channelNameDraft,
     conversations,
     copyServerInviteLink,
+    cancelEditingMessage,
     current,
+    deleteOwnMessage,
     declineFriendRequest,
     displayNameDraft,
+    editLatestOwnMessage,
+    editingMessageId,
+    editOwnMessage,
     forceDeafenMember,
     forceMuteMember,
     friendHandleDraft,

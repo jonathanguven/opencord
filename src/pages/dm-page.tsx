@@ -44,15 +44,22 @@ export function DmPage() {
       />
       <ScrollArea className="min-h-0 flex-1">
         <MessageFeed
+          currentUserId={view.current?.user?._id}
+          editingMessageId={thread.editingMessageId}
           emptyDescription={`Start the conversation with ${conversationName}.`}
           emptyTitle="Say hello"
           messages={thread.messages}
+          onDeleteMessage={thread.deleteOwnMessage}
+          onEditMessage={thread.editOwnMessage}
         />
       </ScrollArea>
       <div className="border-border/60 border-t p-4">
         <MessageComposer
           draft={thread.messageDraft}
+          editingMessageId={thread.editingMessageId}
+          onCancelEdit={thread.cancelEditingMessage}
           onChange={thread.setMessageDraft}
+          onEditLatestMessage={thread.editLatestOwnMessage}
           onSend={thread.sendActiveMessage}
           placeholder={`Message ${conversationName}`}
         />
