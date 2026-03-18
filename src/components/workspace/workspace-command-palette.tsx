@@ -1,0 +1,389 @@
+import { type RequestForQueries, useQueries } from "convex/react";
+import Fuse from "fuse.js";
+import { HashIcon, SearchIcon, Volume2Icon } from "lucide-react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
+
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Command,
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandShortcut,
+} from "@/components/ui/command";
+import {
+  useWorkspaceNavigation,
+  useWorkspaceView,
+} from "@/components/workspace/workspace-screen-context";
+import type { WorkspaceResult } from "@/components/workspace/workspace-types";
+import { getDisplayName, getInitials } from "@/lib/presentation";
+import { getChannelPath, getDmPath } from "@/lib/workspace";
+import { api } from "../../../convex/_generated/api";
+
+const RECENT_SEARCHES_STORAGE_KEY = "opencord:command-palette-recents";
+const MAX_RECENT_SEARCHES = 30;
+const DEFAULT_RECENT_RESULTS = 7;
+const MAX_VISIBLE_RESULTS = 10;
+
+interface SearchCommandItem {
+  avatarUrl?: string | null;
+  handle?: string;
+  id: string;
+  kind: "dm" | "text" | "voice";
+  label: string;
+  path: string;
+  searchText: string;
+  serverName?: string;
+  subtitle: string;
+}
+
+interface RecentSearchItem {
+  itemId: string;
+  updatedAt: number;
+}
+
+function readRecentSearches() {
+  if (typeof window === "undefined") {
+    return [] as RecentSearchItem[];
+  }
+
+  try {
+    const storedValue = window.localStorage.getItem(
+      RECENT_SEARCHES_STORAGE_KEY
+    );
+
+    if (!storedValue) {
+      return [];
+    }
+
+    const parsedValue = JSON.parse(storedValue) as RecentSearchItem[];
+    return Array.isArray(parsedValue) ? parsedValue : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeRecentSearches(recentItems: RecentSearchItem[]) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(
+    RECENT_SEARCHES_STORAGE_KEY,
+    JSON.stringify(recentItems.slice(0, MAX_RECENT_SEARCHES))
+  );
+}
+
+function trackRecentSearch(itemId: string) {
+  const nextItems = [
+    { itemId, updatedAt: Date.now() },
+    ...readRecentSearches().filter((item) => item.itemId !== itemId),
+  ];
+
+  writeRecentSearches(nextItems);
+}
+
+export function WorkspaceCommandPalette() {
+  const view = useWorkspaceView();
+  const navigation = useWorkspaceNavigation();
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [recentItems, setRecentItems] =
+    useState<RecentSearchItem[]>(readRecentSearches);
+
+  const workspaceQueries = useMemo<RequestForQueries>(() => {
+    const entries = (view.servers ?? []).flatMap((entry) =>
+      entry.server
+        ? [
+            [
+              entry.server._id,
+              {
+                args: { serverId: entry.server._id },
+                query: api.servers.getWorkspace,
+              },
+            ] as const,
+          ]
+        : []
+    );
+
+    return Object.fromEntries(entries);
+  }, [view.servers]);
+
+  const workspaceResults = useQueries(workspaceQueries);
+
+  const dmItems = useMemo<SearchCommandItem[]>(
+    () =>
+      (view.conversations ?? [])
+        .map((conversation) => {
+          const displayName = getDisplayName(conversation.otherUser);
+          const latestMessage = conversation.latestMessage?.body ?? "";
+          const handle = conversation.otherUser?.handle ?? "";
+
+          return {
+            avatarUrl: conversation.otherUser?.avatarUrl ?? null,
+            handle,
+            id: `dm:${conversation._id}`,
+            kind: "dm" as const,
+            label: displayName,
+            path: getDmPath(conversation._id),
+            searchText: `${displayName} ${handle} ${latestMessage} dm conversation`,
+            subtitle: "",
+          };
+        })
+        .sort((left, right) => left.label.localeCompare(right.label)),
+    [view.conversations]
+  );
+
+  const channelItems = useMemo<SearchCommandItem[]>(() => {
+    const workspaces = Object.values(workspaceResults).filter(
+      (result): result is WorkspaceResult =>
+        typeof result !== "undefined" && !(result instanceof Error)
+    );
+
+    return workspaces
+      .flatMap((workspace) => {
+        const serverName = workspace.server?.name ?? "Server";
+
+        return workspace.channels.map((channel) => ({
+          id: `channel:${channel._id}`,
+          kind: channel.kind,
+          label: channel.kind === "text" ? `#${channel.name}` : channel.name,
+          path: getChannelPath(channel.serverId, channel._id),
+          searchText: `${channel.name} ${serverName} ${channel.kind} ${channel.access} channel`,
+          serverName,
+          subtitle: serverName,
+        }));
+      })
+      .sort(
+        (left, right) =>
+          left.subtitle.localeCompare(right.subtitle) ||
+          left.label.localeCompare(right.label)
+      );
+  }, [workspaceResults]);
+
+  const allItems = useMemo(
+    () => [...dmItems, ...channelItems],
+    [channelItems, dmItems]
+  );
+
+  const itemMap = useMemo(
+    () => new Map(allItems.map((item) => [item.id, item])),
+    [allItems]
+  );
+
+  const fuse = useMemo(
+    () =>
+      new Fuse(allItems, {
+        ignoreLocation: true,
+        keys: ["label", "subtitle", "searchText"],
+        threshold: 0.35,
+      }),
+    [allItems]
+  );
+
+  const recentResults = useMemo(
+    () =>
+      recentItems
+        .map((recentItem) => itemMap.get(recentItem.itemId))
+        .filter((item): item is SearchCommandItem => Boolean(item))
+        .slice(0, DEFAULT_RECENT_RESULTS),
+    [itemMap, recentItems]
+  );
+
+  const searchResults = useMemo(() => {
+    const normalizedQuery = query.trim();
+
+    if (!normalizedQuery) {
+      return recentResults;
+    }
+
+    return fuse
+      .search(normalizedQuery)
+      .map((result) => result.item)
+      .slice(0, MAX_VISIBLE_RESULTS);
+  }, [fuse, query, recentResults]);
+
+  const dmResults = useMemo(
+    () => searchResults.filter((item) => item.kind === "dm"),
+    [searchResults]
+  );
+
+  const channelResults = useMemo(
+    () => searchResults.filter((item) => item.kind !== "dm"),
+    [searchResults]
+  );
+
+  const hasQuery = query.trim().length > 0;
+  const showRecentResults = !hasQuery && recentResults.length > 0;
+
+  const openItem = (item: SearchCommandItem) => {
+    trackRecentSearch(item.id);
+    setRecentItems(readRecentSearches());
+    navigation.navigate(item.path);
+    setOpen(false);
+    setQuery("");
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!(event.metaKey || event.ctrlKey) || event.altKey) {
+        return;
+      }
+
+      if (event.key.toLowerCase() !== "k") {
+        return;
+      }
+
+      event.preventDefault();
+      setOpen((currentValue) => !currentValue);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    if (!open) {
+      setQuery("");
+      setRecentItems(readRecentSearches());
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (!view.activeConversation) {
+      return;
+    }
+
+    trackRecentSearch(`dm:${view.activeConversation._id}`);
+    setRecentItems(readRecentSearches());
+  }, [view.activeConversation]);
+
+  useEffect(() => {
+    if (!(view.activeChannel && view.activeServer)) {
+      return;
+    }
+
+    trackRecentSearch(`channel:${view.activeChannel._id}`);
+    setRecentItems(readRecentSearches());
+  }, [view.activeChannel, view.activeServer]);
+
+  return (
+    <>
+      <button
+        className="flex h-10 w-full items-center gap-2 rounded-xl border border-white/6 bg-[#1e1f22] px-3 text-left font-medium text-[#b5bac1] text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition-colors hover:border-white/10 hover:text-[#f2f3f5]"
+        onClick={() => setOpen(true)}
+        type="button"
+      >
+        <SearchIcon className="size-4 shrink-0 text-[#8e9297]" />
+        <span className="flex-1 truncate">Find conversation or channel</span>
+      </button>
+
+      <CommandDialog
+        className="border-white/8 bg-[#1e1f22] sm:max-w-2xl"
+        description="Client-side fuzzy search across your loaded DMs and channels."
+        onOpenChange={setOpen}
+        open={open}
+        overlayClassName="bg-black/55 supports-backdrop-filter:backdrop-blur-none"
+        title="Find conversations and channels"
+      >
+        <Command className="bg-[#1e1f22] text-[#f2f3f5]" shouldFilter={false}>
+          <CommandInput
+            className="placeholder:text-[#8e9297]"
+            onValueChange={setQuery}
+            placeholder="Search DMs, text channels, voice channels..."
+            value={query}
+          />
+          <CommandList className="max-h-96">
+            {searchResults.length ? null : (
+              <CommandEmpty>No conversations or channels found.</CommandEmpty>
+            )}
+            {showRecentResults ? (
+              <CommandGroup heading="Recent">
+                {recentResults.map((item) => (
+                  <PaletteItem item={item} key={item.id} onSelect={openItem} />
+                ))}
+              </CommandGroup>
+            ) : null}
+            {hasQuery && dmResults.length ? (
+              <CommandGroup heading="Direct Messages">
+                {dmResults.map((item) => (
+                  <PaletteItem item={item} key={item.id} onSelect={openItem} />
+                ))}
+              </CommandGroup>
+            ) : null}
+            {hasQuery && channelResults.length ? (
+              <CommandGroup heading="Channels">
+                {channelResults.map((item) => (
+                  <PaletteItem item={item} key={item.id} onSelect={openItem} />
+                ))}
+              </CommandGroup>
+            ) : null}
+          </CommandList>
+        </Command>
+      </CommandDialog>
+    </>
+  );
+}
+
+function PaletteItem({
+  item,
+  onSelect,
+}: {
+  item: SearchCommandItem;
+  onSelect: (item: SearchCommandItem) => void;
+}) {
+  let shortcut = "Text";
+  let icon = <HashIcon className="text-[#8e9297]" />;
+  let rightContent: ReactNode = <CommandShortcut>{shortcut}</CommandShortcut>;
+  let labelSuffix: ReactNode = null;
+  let subtitle = item.subtitle;
+
+  if (item.kind === "dm") {
+    icon = (
+      <Avatar className="size-6">
+        <AvatarImage src={item.avatarUrl ?? undefined} />
+        <AvatarFallback className="bg-[#5865f2]/20 text-white">
+          {getInitials(item.label)}
+        </AvatarFallback>
+      </Avatar>
+    );
+    shortcut = item.handle ? `@${item.handle}` : "";
+    labelSuffix = shortcut ? (
+      <span className="truncate text-[#8e9297] text-xs">{shortcut}</span>
+    ) : null;
+    rightContent = null;
+  } else if (item.kind === "voice") {
+    shortcut = "Voice";
+    icon = <Volume2Icon className="text-[#8e9297]" />;
+    rightContent = <CommandShortcut>{shortcut}</CommandShortcut>;
+  } else {
+    subtitle = "";
+    shortcut = item.serverName ?? "";
+    rightContent = <CommandShortcut>{shortcut}</CommandShortcut>;
+  }
+
+  return (
+    <CommandItem
+      className="gap-3 rounded-xl px-3 py-2"
+      onSelect={() => onSelect(item)}
+      value={item.searchText}
+    >
+      {icon}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 truncate">
+          <span className="truncate font-medium text-[#f2f3f5] text-sm">
+            {item.label}
+          </span>
+          {labelSuffix}
+        </div>
+        {subtitle ? (
+          <div className="truncate text-[#8e9297] text-xs">{subtitle}</div>
+        ) : null}
+      </div>
+      {rightContent}
+    </CommandItem>
+  );
+}
