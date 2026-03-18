@@ -11,6 +11,7 @@ import {
   useWorkspaceUi,
   useWorkspaceView,
 } from "@/components/workspace/workspace-screen-context";
+import { getChannelNameText } from "@/lib/channel-name";
 
 export function WorkspaceHeader() {
   const view = useWorkspaceView();
@@ -24,6 +25,8 @@ export function WorkspaceHeader() {
   const hasActiveConversationCall = Boolean(
     view.activeConversation?.activeCall
   );
+  const activeTextChannel =
+    view.activeChannel?.kind === "text" ? view.activeChannel : null;
 
   if (isInConversationCall) {
     callActionLabel = call.isCallConnecting ? "Cancel" : "Leave call";
@@ -45,7 +48,16 @@ export function WorkspaceHeader() {
       <div className="flex min-w-0 items-start gap-2">
         <div className="min-w-0">
           <div className="truncate font-semibold text-base">
-            {view.headerTitle}
+            {activeTextChannel ? (
+              <span className="inline-flex items-center gap-1.5">
+                <span aria-hidden="true" className="text-[#8e9297]">
+                  #
+                </span>
+                <span>{getChannelNameText(activeTextChannel)}</span>
+              </span>
+            ) : (
+              view.headerTitle
+            )}
           </div>
           <div className="truncate text-muted-foreground text-xs">
             {view.headerSubtitle}

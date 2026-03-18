@@ -11,4 +11,4 @@ export const getChannelNameText = (channel: Doc<"channels">) =>
     : channel.name;
 
 export const getChannelDisplayName = (channel: Doc<"channels">) =>
-  channel.kind === "text" ? `#${getChannelNameText(channel)}` : channel.name;
+  channel.kind === "text" ? `# ${getChannelNameText(channel)}` : channel.name;

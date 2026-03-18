@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "convex": "convex dev",
     "dev:backend": "convex dev",
     "auth:setup-local": "node scripts/ensure-convex-auth-env.mjs",
     "build": "tsgo -b && vite build",
