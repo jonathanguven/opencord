@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { MessageBox } from "@/components/workspace/message-box";
 import { VoiceChannelPanel } from "@/components/workspace/voice-channel-panel";
 import {
   useWorkspaceCall,
@@ -7,11 +8,7 @@ import {
   useWorkspaceView,
 } from "@/components/workspace/workspace-screen-context";
 import { getChannelDisplayName } from "@/lib/channel-name";
-import {
-  MessageComposer,
-  MessageFeed,
-  ThreadLoadingState,
-} from "./workspace-page-parts";
+import { MessageFeed, ThreadLoadingState } from "@/pages/workspace-page-parts";
 
 export function ServerChannelPage() {
   const view = useWorkspaceView();
@@ -55,13 +52,13 @@ export function ServerChannelPage() {
         />
       </ScrollArea>
       <div className="border-border/60 border-t px-3 py-2.5">
-        <MessageComposer
-          composerRef={composerRef}
+        <MessageBox
           draft={thread.messageDraft}
           onChange={thread.setMessageDraft}
           onEditLatestMessage={thread.editLatestOwnMessage}
           onSend={thread.sendActiveMessage}
           placeholder={`Message ${getChannelDisplayName(activeChannel)}`}
+          textareaRef={composerRef}
         />
       </div>
     </div>

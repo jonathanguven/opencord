@@ -11,17 +11,14 @@ import { useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { MessageBox } from "@/components/workspace/message-box";
 import {
   useWorkspaceCall,
   useWorkspaceThread,
   useWorkspaceView,
 } from "@/components/workspace/workspace-screen-context";
 import { getDisplayName } from "@/lib/presentation";
-import {
-  MessageComposer,
-  MessageFeed,
-  ThreadLoadingState,
-} from "./workspace-page-parts";
+import { MessageFeed, ThreadLoadingState } from "@/pages/workspace-page-parts";
 
 export function DmPage() {
   const view = useWorkspaceView();
@@ -61,13 +58,13 @@ export function DmPage() {
         />
       </ScrollArea>
       <div className="border-border/60 border-t p-4">
-        <MessageComposer
-          composerRef={composerRef}
+        <MessageBox
           draft={thread.messageDraft}
           onChange={thread.setMessageDraft}
           onEditLatestMessage={thread.editLatestOwnMessage}
           onSend={thread.sendActiveMessage}
           placeholder={`Message ${conversationName}`}
+          textareaRef={composerRef}
         />
       </div>
     </div>

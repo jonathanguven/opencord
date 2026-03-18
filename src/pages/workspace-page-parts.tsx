@@ -1,9 +1,4 @@
-import {
-  ChevronRightIcon,
-  MessageSquareIcon,
-  PencilIcon,
-  Trash2Icon,
-} from "lucide-react";
+import { MessageSquareIcon, PencilIcon, Trash2Icon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -15,12 +10,6 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupTextarea,
-} from "@/components/ui/input-group";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -57,15 +46,6 @@ interface MessageFeedProps {
   onDeleteMessage: (messageId: MessageListItem["_id"]) => void;
   onEditMessage: (messageId: MessageListItem["_id"]) => void;
   onSubmitEdit: () => void;
-}
-
-interface MessageComposerProps {
-  composerRef?: React.RefObject<HTMLTextAreaElement | null>;
-  draft: string;
-  onChange: (value: string) => void;
-  onEditLatestMessage: () => boolean;
-  onSend: () => void;
-  placeholder: string;
 }
 
 export function MessageFeed({
@@ -160,7 +140,7 @@ export function MessageFeed({
                       />
                     }
                   >
-                    <PencilIcon className="size-3.5 transition-all group-hover/edit:scale-110 group-hover/edit:[stroke-width:2.4]" />
+                    <PencilIcon className="size-3.5 transition-all group-hover/edit:scale-110 group-hover/edit:stroke-[2.4]" />
                   </TooltipTrigger>
                   <TooltipContent>Edit</TooltipContent>
                 </Tooltip>
@@ -177,7 +157,7 @@ export function MessageFeed({
                       />
                     }
                   >
-                    <Trash2Icon className="size-3.5 transition-all group-hover/delete:scale-110 group-hover/delete:[stroke-width:2.4]" />
+                    <Trash2Icon className="size-3.5 transition-all group-hover/delete:scale-110 group-hover/delete:stroke-[2.4]" />
                   </TooltipTrigger>
                   <TooltipContent>Delete</TooltipContent>
                 </Tooltip>
@@ -266,56 +246,6 @@ function useDelayedLoadingState(isLoading: boolean, delayMs: number) {
   }, [delayMs, isLoading]);
 
   return isLoading && isDelayElapsed;
-}
-
-export function MessageComposer({
-  composerRef,
-  draft,
-  onChange,
-  onEditLatestMessage,
-  onSend,
-  placeholder,
-}: MessageComposerProps) {
-  return (
-    <InputGroup className="relative min-h-12 items-end">
-      <InputGroupTextarea
-        maxLength={4000}
-        onChange={(event) => onChange(event.target.value)}
-        onKeyDown={(event) => {
-          if (
-            event.key === "ArrowUp" &&
-            !event.shiftKey &&
-            !draft.trim() &&
-            event.currentTarget.selectionStart === 0 &&
-            event.currentTarget.selectionEnd === 0
-          ) {
-            if (onEditLatestMessage()) {
-              event.preventDefault();
-            }
-            return;
-          }
-
-          if (event.key === "Enter" && !event.shiftKey) {
-            event.preventDefault();
-            onSend();
-          }
-        }}
-        placeholder={placeholder}
-        ref={composerRef}
-        rows={1}
-        value={draft}
-      />
-      <InputGroupAddon align="inline-end">
-        <InputGroupButton
-          disabled={!draft.trim()}
-          onClick={onSend}
-          size="icon-sm"
-        >
-          <ChevronRightIcon />
-        </InputGroupButton>
-      </InputGroupAddon>
-    </InputGroup>
-  );
 }
 
 export function ThreadLoadingState() {
