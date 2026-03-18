@@ -14,6 +14,7 @@ import {
   Volume2Icon,
 } from "lucide-react";
 import type { ReactNode } from "react";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,15 +40,17 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type {
-  ConversationListItem,
-  ServerListItem,
-  VoicePresenceItem,
-} from "@/components/workspace/workspace-types";
+import {
+  useWorkspaceFriends,
+  useWorkspaceNavigation,
+  useWorkspaceUi,
+  useWorkspaceView,
+} from "@/components/workspace/workspace-screen-context";
+import type { VoicePresenceItem } from "@/components/workspace/workspace-types";
 import { getDisplayName, getInitials } from "@/lib/presentation";
 import { cn } from "@/lib/utils";
+import { getChannelPath, getDmPath, getServerPath } from "@/lib/workspace";
 import type { Doc, Id } from "../../../convex/_generated/dataModel";
-import type { PermissionSet } from "../../../shared/domain";
 
 const SIDEBAR_RAIL_TONES = [
   "from-sky-500 to-cyan-400",
@@ -58,36 +61,6 @@ const SIDEBAR_RAIL_TONES = [
   "from-rose-500 to-red-500",
 ] as const;
 
-interface WorkspaceRailProps {
-  activeServerId: Id<"servers"> | null;
-  isFriendsView: boolean;
-  onCreateServer: () => void;
-  onOpenFriends: () => void;
-  onOpenServer: (serverId: Id<"servers">) => void;
-  servers: ServerListItem[] | undefined;
-}
-
-interface WorkspaceSidebarProps {
-  activeChannelId: Id<"channels"> | null;
-  activeConversationId: Id<"conversations"> | null;
-  activeServer: Doc<"servers"> | null;
-  allowServerInvites: boolean;
-  conversations: ConversationListItem[] | undefined;
-  currentUser: Doc<"users"> | null | undefined;
-  isFriendsView: boolean;
-  onCreateChannel: () => void;
-  onOpenAddFriend: () => void;
-  onOpenConversation: (conversationId: Id<"conversations">) => void;
-  onOpenInvite: () => void;
-  onOpenServerChannel: (channelId: Id<"channels">) => void;
-  onOpenTab: (value: string) => void;
-  onSignOut: () => Promise<void>;
-  permissions: PermissionSet;
-  textChannels: Doc<"channels">[];
-  voiceChannels: Doc<"channels">[];
-  voicePresence: VoicePresenceItem[] | undefined;
-}
-
 interface DiscordDmRowProps {
   active?: boolean;
   avatarUrl?: string | null;
@@ -97,25 +70,22 @@ interface DiscordDmRowProps {
   subtitle: string;
 }
 
-export function WorkspaceRail({
-  activeServerId,
-  isFriendsView,
-  onCreateServer,
-  onOpenFriends,
-  onOpenServer,
-  servers,
-}: WorkspaceRailProps) {
+export function WorkspaceRail() {
+  const view = useWorkspaceView();
+  const ui = useWorkspaceUi();
+  const navigation = useWorkspaceNavigation();
+
   return (
     <div className="flex w-[76px] shrink-0 flex-col items-center justify-between border-white/5 border-r bg-[#1e1f22] px-3 py-4">
       <div className="flex flex-col items-center gap-3">
         <Tooltip>
           <TooltipTrigger
-            onClick={onOpenFriends}
+            onClick={() => navigation.navigate("/channels")}
             render={
               <Button
                 className={cn(
                   "size-12 rounded-[1.35rem] border border-white/5 bg-[#5865f2] text-white shadow-[0_10px_30px_rgba(88,101,242,0.35)] hover:bg-[#6d78f6]",
-                  isFriendsView &&
+                  view.isFriendsView &&
                     "rounded-[1rem] bg-white text-[#1e1f22] hover:bg-white"
                 )}
                 size="icon-lg"
@@ -132,18 +102,20 @@ export function WorkspaceRail({
 
         <ScrollArea className="max-h-[calc(100svh-11rem)]">
           <div className="flex flex-col items-center gap-3">
-            {servers?.map((entry, index) => {
+            {view.servers?.map((entry, index) => {
               if (!entry.server) {
                 return null;
               }
 
               const server = entry.server;
-              const isActive = activeServerId === server._id;
+              const isActive = view.activeServerId === server._id;
 
               return (
                 <Tooltip key={server._id}>
                   <TooltipTrigger
-                    onClick={() => onOpenServer(server._id)}
+                    onClick={() =>
+                      navigation.navigate(getServerPath(server._id))
+                    }
                     render={
                       <Button
                         className={cn(
@@ -173,7 +145,7 @@ export function WorkspaceRail({
 
         <Tooltip>
           <TooltipTrigger
-            onClick={onCreateServer}
+            onClick={() => ui.setIsCreateServerOpen(true)}
             render={
               <Button
                 className="size-12 rounded-[1.35rem] border border-white/5 bg-[#2b2d31] text-[#dcddde] hover:bg-[#35373c]"
@@ -193,29 +165,16 @@ export function WorkspaceRail({
   );
 }
 
-export function WorkspaceSidebar({
-  activeChannelId,
-  activeConversationId,
-  activeServer,
-  allowServerInvites,
-  conversations,
-  currentUser,
-  isFriendsView,
-  onCreateChannel,
-  onOpenAddFriend,
-  onOpenConversation,
-  onOpenInvite,
-  onOpenServerChannel,
-  onOpenTab,
-  onSignOut,
-  permissions,
-  textChannels,
-  voiceChannels,
-  voicePresence,
-}: WorkspaceSidebarProps) {
+export function WorkspaceSidebar() {
+  const view = useWorkspaceView();
+  const ui = useWorkspaceUi();
+  const navigation = useWorkspaceNavigation();
+  const friends = useWorkspaceFriends();
+
+  const currentUser = view.current?.user;
   const sidebarProfileName = getDisplayName(currentUser);
   const sidebarProfileHandle = `@${currentUser?.handle ?? "finish-setup"}`;
-  const directMessageCount = conversations?.length ?? 0;
+  const directMessageCount = view.conversations?.length ?? 0;
 
   return (
     <aside className="flex h-full flex-col border-white/5 border-r bg-[#2b2d31]">
@@ -226,20 +185,23 @@ export function WorkspaceSidebar({
         >
           <SearchIcon className="mr-3 size-5 text-[#8e9297]" />
           <span className="truncate">
-            {isFriendsView
+            {view.isFriendsView
               ? "Find or start a conversation"
-              : `Search ${activeServer?.name ?? "channels"}`}
+              : `Search ${view.activeServer?.name ?? "channels"}`}
           </span>
         </button>
       </div>
 
       <div className="min-h-0 flex-1">
-        {isFriendsView ? (
+        {view.isFriendsView ? (
           <ScrollArea className="h-full">
             <div className="flex flex-col gap-2 p-3">
               <button
                 className="flex w-full items-center gap-3 rounded-2xl bg-[#404249] px-3 py-3 text-left font-semibold text-[0.95rem] text-white transition-colors"
-                onClick={() => onOpenTab("all")}
+                onClick={() => {
+                  navigation.navigate("/channels");
+                  friends.setFriendsTab("all");
+                }}
                 type="button"
               >
                 <UsersIcon className="size-5 shrink-0" />
@@ -252,7 +214,7 @@ export function WorkspaceSidebar({
                 </div>
                 <button
                   className="rounded-md p-1 text-[#b5bac1] transition-colors hover:bg-[#35373c] hover:text-white"
-                  onClick={onOpenAddFriend}
+                  onClick={navigation.showAddFriendTab}
                   type="button"
                 >
                   <PlusIcon className="size-4" />
@@ -261,13 +223,15 @@ export function WorkspaceSidebar({
               </div>
 
               <div className="flex flex-col gap-1">
-                {conversations?.map((conversation) => (
+                {view.conversations?.map((conversation) => (
                   <DiscordDmRow
-                    active={activeConversationId === conversation._id}
+                    active={view.activeConversationId === conversation._id}
                     avatarUrl={conversation.otherUser?.avatarUrl}
                     displayName={getDisplayName(conversation.otherUser)}
                     key={conversation._id}
-                    onClick={() => onOpenConversation(conversation._id)}
+                    onClick={() =>
+                      navigation.navigate(getDmPath(conversation._id))
+                    }
                     presence={conversation.activeCall ? "active" : "idle"}
                     subtitle={
                       conversation.latestMessage?.body ?? "Start chatting"
@@ -275,7 +239,7 @@ export function WorkspaceSidebar({
                   />
                 ))}
 
-                {conversations?.length ? null : (
+                {view.conversations?.length ? null : (
                   <Empty className="mt-2 border border-white/8 bg-[#232428] text-[#dcddde]">
                     <EmptyHeader>
                       <EmptyMedia variant="icon">
@@ -298,10 +262,10 @@ export function WorkspaceSidebar({
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="truncate font-bold text-lg text-white">
-                      {activeServer?.name ?? "Server"}
+                      {view.activeServer?.name ?? "Server"}
                     </div>
                     <div className="mt-1 line-clamp-2 text-[#a7aab4] text-sm">
-                      {activeServer?.description ||
+                      {view.activeServer?.description ||
                         "Flat channels, invite-only access, and reactive voice presence."}
                     </div>
                   </div>
@@ -321,12 +285,17 @@ export function WorkspaceSidebar({
                       <DropdownMenuLabel>Server actions</DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuGroup>
-                        <DropdownMenuItem onClick={onOpenInvite}>
+                        <DropdownMenuItem
+                          onClick={() => ui.setIsInviteOpen(true)}
+                        >
                           <CopyIcon />
                           Create invite
                         </DropdownMenuItem>
-                        {permissions.manageChannels || permissions.admin ? (
-                          <DropdownMenuItem onClick={onCreateChannel}>
+                        {view.permissions.manageChannels ||
+                        view.permissions.admin ? (
+                          <DropdownMenuItem
+                            onClick={() => ui.setIsCreateChannelOpen(true)}
+                          >
                             <PlusIcon />
                             New channel
                           </DropdownMenuItem>
@@ -338,20 +307,36 @@ export function WorkspaceSidebar({
               </div>
 
               <ChannelSection
-                activeChannelId={activeChannelId}
-                channels={textChannels}
+                activeChannelId={view.routeChannelId}
+                channels={view.textChannels}
                 icon={HashIcon}
                 label="Text channels"
-                onSelect={onOpenServerChannel}
+                onSelect={(channelId) => {
+                  if (!view.activeServerId) {
+                    return;
+                  }
+
+                  navigation.navigate(
+                    getChannelPath(view.activeServerId, channelId)
+                  );
+                }}
               />
 
               <ChannelSection
-                activeChannelId={activeChannelId}
-                channels={voiceChannels}
-                counts={voicePresence}
+                activeChannelId={view.routeChannelId}
+                channels={view.voiceChannels}
+                counts={view.voicePresence}
                 icon={Volume2Icon}
                 label="Voice channels"
-                onSelect={onOpenServerChannel}
+                onSelect={(channelId) => {
+                  if (!view.activeServerId) {
+                    return;
+                  }
+
+                  navigation.navigate(
+                    getChannelPath(view.activeServerId, channelId)
+                  );
+                }}
               />
             </div>
           </ScrollArea>
@@ -374,9 +359,9 @@ export function WorkspaceSidebar({
               {sidebarProfileHandle}
             </div>
             <div className="truncate text-sm text-white/70">
-              {isFriendsView
+              {view.isFriendsView
                 ? `${directMessageCount} open DMs`
-                : (activeServer?.name ?? "OpenCord")}
+                : (view.activeServer?.name ?? "OpenCord")}
             </div>
           </div>
           <div className="flex items-center gap-2 text-white/90">
@@ -407,17 +392,17 @@ export function WorkspaceSidebar({
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                  <DropdownMenuItem onClick={onOpenAddFriend}>
+                  <DropdownMenuItem onClick={navigation.showAddFriendTab}>
                     <UserPlusIcon />
                     Add friend
                   </DropdownMenuItem>
-                  {allowServerInvites ? (
-                    <DropdownMenuItem onClick={onOpenInvite}>
+                  {view.canCreateServerInvites ? (
+                    <DropdownMenuItem onClick={() => ui.setIsInviteOpen(true)}>
                       <CopyIcon />
                       Create invite
                     </DropdownMenuItem>
                   ) : null}
-                  <DropdownMenuItem onClick={onSignOut}>
+                  <DropdownMenuItem onClick={navigation.handleSignOut}>
                     <LogOutIcon />
                     Sign out
                   </DropdownMenuItem>

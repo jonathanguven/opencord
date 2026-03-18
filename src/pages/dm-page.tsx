@@ -1,8 +1,8 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type {
-  ConversationListItem,
-  MessageListItem,
-} from "@/components/workspace/workspace-types";
+import {
+  useWorkspaceThread,
+  useWorkspaceView,
+} from "@/components/workspace/workspace-screen-context";
 import { getDisplayName } from "@/lib/presentation";
 import {
   MessageComposer,
@@ -10,25 +10,14 @@ import {
   ThreadLoadingState,
 } from "./workspace-page-parts";
 
-interface DmPageProps {
-  activeConversation: ConversationListItem | null;
-  activeConversationId: ConversationListItem["_id"] | null;
-  messageDraft: string;
-  messages: MessageListItem[] | undefined;
-  onChangeDraft: (value: string) => void;
-  onSendMessage: () => void;
-}
+export function DmPage() {
+  const view = useWorkspaceView();
+  const thread = useWorkspaceThread();
 
-export function DmPage({
-  activeConversation,
-  activeConversationId,
-  messageDraft,
-  messages,
-  onChangeDraft,
-  onSendMessage,
-}: DmPageProps) {
+  const activeConversation = view.activeConversation;
+
   if (!activeConversation) {
-    return activeConversationId ? <ThreadLoadingState /> : null;
+    return view.activeConversationId ? <ThreadLoadingState /> : null;
   }
 
   return (
@@ -39,14 +28,14 @@ export function DmPage({
             activeConversation.otherUser
           )}.`}
           emptyTitle="Say hello"
-          messages={messages}
+          messages={thread.messages}
         />
       </ScrollArea>
       <div className="border-border/60 border-t p-4">
         <MessageComposer
-          draft={messageDraft}
-          onChange={onChangeDraft}
-          onSend={onSendMessage}
+          draft={thread.messageDraft}
+          onChange={thread.setMessageDraft}
+          onSend={thread.sendActiveMessage}
           placeholder={`Message ${getDisplayName(activeConversation.otherUser)}`}
         />
       </div>

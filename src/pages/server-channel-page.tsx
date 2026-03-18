@@ -1,38 +1,23 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { VoiceChannelPanel } from "@/components/workspace/voice-channel-panel";
-import type {
-  ActiveCall,
-  MessageListItem,
-  VoicePresenceItem,
-} from "@/components/workspace/workspace-types";
-import type { Doc } from "../../convex/_generated/dataModel";
+import {
+  useWorkspaceCall,
+  useWorkspaceThread,
+  useWorkspaceView,
+} from "@/components/workspace/workspace-screen-context";
 import {
   MessageComposer,
   MessageFeed,
   ThreadLoadingState,
 } from "./workspace-page-parts";
 
-interface ServerChannelPageProps {
-  activeCall: ActiveCall | null;
-  activeChannel: Doc<"channels"> | null;
-  activeVoiceMembers: VoicePresenceItem[];
-  messageDraft: string;
-  messages: MessageListItem[] | undefined;
-  onChangeDraft: (value: string) => void;
-  onJoinVoice: (channel: Doc<"channels">) => void;
-  onSendMessage: () => void;
-}
+export function ServerChannelPage() {
+  const view = useWorkspaceView();
+  const thread = useWorkspaceThread();
+  const call = useWorkspaceCall();
 
-export function ServerChannelPage({
-  activeCall,
-  activeChannel,
-  activeVoiceMembers,
-  messageDraft,
-  messages,
-  onChangeDraft,
-  onJoinVoice,
-  onSendMessage,
-}: ServerChannelPageProps) {
+  const activeChannel = view.activeChannel;
+
   if (!activeChannel) {
     return <ThreadLoadingState />;
   }
@@ -40,10 +25,10 @@ export function ServerChannelPage({
   if (activeChannel.kind === "voice") {
     return (
       <VoiceChannelPanel
-        activeCall={activeCall}
+        activeCall={call.activeCall}
         channel={activeChannel}
-        members={activeVoiceMembers}
-        onJoin={() => onJoinVoice(activeChannel)}
+        members={view.activeVoiceMembers}
+        onJoin={() => call.joinVoiceChannel(activeChannel)}
       />
     );
   }
@@ -54,14 +39,14 @@ export function ServerChannelPage({
         <MessageFeed
           emptyDescription={`Be the first to post in #${activeChannel.name}.`}
           emptyTitle="No messages yet"
-          messages={messages}
+          messages={thread.messages}
         />
       </ScrollArea>
       <div className="border-border/60 border-t p-4">
         <MessageComposer
-          draft={messageDraft}
-          onChange={onChangeDraft}
-          onSend={onSendMessage}
+          draft={thread.messageDraft}
+          onChange={thread.setMessageDraft}
+          onSend={thread.sendActiveMessage}
           placeholder={`Message #${activeChannel.name}`}
         />
       </div>

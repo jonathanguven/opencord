@@ -17,68 +17,73 @@ import {
 } from "@/components/workspace/workspace-left-sidebar";
 import { WorkspaceMainContent } from "@/components/workspace/workspace-main-content";
 import { WorkspaceRightSidebar } from "@/components/workspace/workspace-right-sidebar";
-import { useWorkspaceScreenController } from "@/hooks/use-workspace-screen-controller";
-import { getChannelPath, getDmPath, getServerPath } from "@/lib/workspace";
-
-const CHANNELS_PATH = "/channels";
+import {
+  useWorkspaceCall,
+  useWorkspaceDialogs,
+  useWorkspaceUi,
+  useWorkspaceView,
+  WorkspaceScreenProvider,
+} from "@/components/workspace/workspace-screen-context";
 
 export function WorkspaceScreen() {
-  const controller = useWorkspaceScreenController();
+  return (
+    <WorkspaceScreenProvider>
+      <WorkspaceScreenLayout />
+    </WorkspaceScreenProvider>
+  );
+}
+
+function WorkspaceScreenLayout() {
+  const view = useWorkspaceView();
+  const ui = useWorkspaceUi();
+  const dialogs = useWorkspaceDialogs();
+  const call = useWorkspaceCall();
 
   return (
     <div className="flex min-h-svh bg-[#313338] text-[#f2f3f5]">
       <OnboardingDialog
-        displayNameDraft={controller.displayNameDraft}
-        handleDraft={controller.handleDraft}
-        handleError={controller.handleError}
-        needsOnboarding={controller.current?.needsOnboarding}
-        onDisplayNameChange={controller.setDisplayNameDraft}
-        onHandleChange={controller.setHandleDraft}
-        onSubmit={controller.submitOnboarding}
+        displayNameDraft={dialogs.displayNameDraft}
+        handleDraft={dialogs.handleDraft}
+        handleError={dialogs.handleError}
+        needsOnboarding={view.current?.needsOnboarding}
+        onDisplayNameChange={dialogs.setDisplayNameDraft}
+        onHandleChange={dialogs.setHandleDraft}
+        onSubmit={dialogs.submitOnboarding}
       />
 
       <CreateServerDialog
-        description={controller.serverDescriptionDraft}
-        name={controller.serverNameDraft}
-        onDescriptionChange={controller.setServerDescriptionDraft}
-        onNameChange={controller.setServerNameDraft}
-        onOpenChange={controller.setIsCreateServerOpen}
-        onSubmit={controller.submitCreateServer}
-        open={controller.isCreateServerOpen}
+        description={dialogs.serverDescriptionDraft}
+        name={dialogs.serverNameDraft}
+        onDescriptionChange={dialogs.setServerDescriptionDraft}
+        onNameChange={dialogs.setServerNameDraft}
+        onOpenChange={ui.setIsCreateServerOpen}
+        onSubmit={dialogs.submitCreateServer}
+        open={ui.isCreateServerOpen}
       />
 
       <InviteDialog
-        activeServer={controller.activeServer}
-        friends={controller.friends?.friends ?? []}
-        inviteLink={controller.inviteLink}
-        landingChannelName={controller.textChannels[0]?.name ?? "general"}
-        onCopyInviteLink={controller.copyServerInviteLink}
-        onOpenChange={controller.setIsInviteOpen}
-        open={controller.isInviteOpen}
+        activeServer={view.activeServer}
+        friends={view.friends?.friends ?? []}
+        inviteLink={view.inviteLink}
+        landingChannelName={view.textChannels[0]?.name ?? "general"}
+        onCopyInviteLink={dialogs.copyServerInviteLink}
+        onOpenChange={ui.setIsInviteOpen}
+        open={ui.isInviteOpen}
       />
 
       <CreateChannelDialog
-        access={controller.channelAccessDraft}
-        kind={controller.channelKindDraft}
-        name={controller.channelNameDraft}
-        onAccessChange={controller.setChannelAccessDraft}
-        onKindChange={controller.setChannelKindDraft}
-        onNameChange={controller.setChannelNameDraft}
-        onOpenChange={controller.setIsCreateChannelOpen}
-        onSubmit={controller.submitCreateChannel}
-        open={controller.isCreateChannelOpen}
+        access={dialogs.channelAccessDraft}
+        kind={dialogs.channelKindDraft}
+        name={dialogs.channelNameDraft}
+        onAccessChange={dialogs.setChannelAccessDraft}
+        onKindChange={dialogs.setChannelKindDraft}
+        onNameChange={dialogs.setChannelNameDraft}
+        onOpenChange={ui.setIsCreateChannelOpen}
+        onSubmit={dialogs.submitCreateChannel}
+        open={ui.isCreateChannelOpen}
       />
 
-      <WorkspaceRail
-        activeServerId={controller.activeServerId}
-        isFriendsView={controller.isFriendsView}
-        onCreateServer={() => controller.setIsCreateServerOpen(true)}
-        onOpenFriends={() => controller.navigate(CHANNELS_PATH)}
-        onOpenServer={(serverId) =>
-          controller.navigate(getServerPath(serverId))
-        }
-        servers={controller.servers}
-      />
+      <WorkspaceRail />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <ResizablePanelGroup className="min-h-svh" orientation="horizontal">
@@ -89,94 +94,30 @@ export function WorkspaceScreen() {
             maxSize="26%"
             minSize="12%"
             onResize={(size) =>
-              controller.setIsLeftSidebarCollapsed(size.asPercentage === 0)
+              ui.setIsLeftSidebarCollapsed(size.asPercentage === 0)
             }
-            panelRef={controller.leftSidebarRef}
+            panelRef={ui.leftSidebarRef}
           >
-            <WorkspaceSidebar
-              activeChannelId={controller.routeChannelId}
-              activeConversationId={controller.activeConversationId}
-              activeServer={controller.activeServer}
-              allowServerInvites={controller.canCreateServerInvites}
-              conversations={controller.conversations}
-              currentUser={controller.current?.user}
-              isFriendsView={controller.isFriendsView}
-              onCreateChannel={() => controller.setIsCreateChannelOpen(true)}
-              onOpenAddFriend={controller.showAddFriendTab}
-              onOpenConversation={(conversationId) =>
-                controller.navigate(getDmPath(conversationId))
-              }
-              onOpenInvite={() => controller.setIsInviteOpen(true)}
-              onOpenServerChannel={(channelId) =>
-                controller.activeServerId
-                  ? controller.navigate(
-                      getChannelPath(controller.activeServerId, channelId)
-                    )
-                  : undefined
-              }
-              onOpenTab={(value) => {
-                controller.navigate(CHANNELS_PATH);
-                controller.setFriendsTab(value);
-              }}
-              onSignOut={controller.handleSignOut}
-              permissions={controller.permissions}
-              textChannels={controller.textChannels}
-              voiceChannels={controller.voiceChannels}
-              voicePresence={controller.voicePresence}
-            />
+            <WorkspaceSidebar />
           </ResizablePanel>
 
           <ResizableHandle withHandle />
 
           <ResizablePanel defaultSize="58%" minSize="40%">
             <main className="flex h-full min-w-0 flex-col bg-background">
-              <WorkspaceHeader
-                activeConversation={Boolean(controller.activeConversation)}
-                allowInvites={controller.canCreateServerInvites}
-                headerSubtitle={controller.headerSubtitle}
-                headerTitle={controller.headerTitle}
-                isFriendsView={controller.isFriendsView}
-                isLeftSidebarCollapsed={controller.isLeftSidebarCollapsed}
-                isRightSidebarCollapsed={controller.isRightSidebarCollapsed}
-                onOpenInvite={() => controller.setIsInviteOpen(true)}
-                onStartCall={controller.startConversationCall}
-                onToggleLeftSidebar={controller.toggleLeftSidebar}
-                onToggleRightSidebar={controller.toggleRightSidebar}
-              />
+              <WorkspaceHeader />
 
               <div className="min-h-0 flex-1">
-                <WorkspaceMainContent
-                  activeCall={controller.activeCall}
-                  activeChannel={controller.activeChannel}
-                  activeConversation={controller.activeConversation}
-                  activeConversationId={controller.activeConversationId}
-                  activeVoiceMembers={controller.activeVoiceMembers}
-                  friendHandleDraft={controller.friendHandleDraft}
-                  friends={controller.friends}
-                  friendsTab={controller.friendsTab}
-                  isFriendsView={controller.isFriendsView}
-                  messageDraft={controller.messageDraft}
-                  messages={controller.messages}
-                  onAcceptRequest={controller.acceptFriendRequest}
-                  onChangeDraft={controller.setMessageDraft}
-                  onDeclineRequest={controller.declineFriendRequest}
-                  onFriendHandleChange={controller.setFriendHandleDraft}
-                  onJoinVoice={controller.joinVoiceChannel}
-                  onMessageFriend={controller.openConversation}
-                  onRemoveFriend={controller.removeFriendship}
-                  onSendMessage={controller.sendActiveMessage}
-                  onSubmitFriendRequest={controller.submitFriendRequest}
-                  onTabChange={controller.setFriendsTab}
-                />
+                <WorkspaceMainContent />
               </div>
 
               <CallTray
-                activeCall={controller.activeCall}
-                isConnecting={controller.isCallConnecting}
-                onDeafen={controller.toggleDeafen}
-                onLeave={controller.leaveActiveCall}
-                onMute={controller.toggleMute}
-                onShareScreen={controller.triggerShareScreen}
+                activeCall={call.activeCall}
+                isConnecting={call.isCallConnecting}
+                onDeafen={call.toggleDeafen}
+                onLeave={call.leaveActiveCall}
+                onMute={call.toggleMute}
+                onShareScreen={call.triggerShareScreen}
               />
             </main>
           </ResizablePanel>
@@ -190,25 +131,11 @@ export function WorkspaceScreen() {
             maxSize="30%"
             minSize="14%"
             onResize={(size) =>
-              controller.setIsRightSidebarCollapsed(size.asPercentage === 0)
+              ui.setIsRightSidebarCollapsed(size.asPercentage === 0)
             }
-            panelRef={controller.rightSidebarRef}
+            panelRef={ui.rightSidebarRef}
           >
-            <WorkspaceRightSidebar
-              activeConversation={controller.activeConversation}
-              canModerate={
-                controller.permissions.moveMembers ||
-                controller.permissions.admin
-              }
-              currentUserId={controller.current?.user?._id ?? null}
-              isFriendsView={controller.isFriendsView}
-              onForceDeafen={controller.forceDeafenMember}
-              onForceMute={controller.forceMuteMember}
-              onMoveMember={controller.moveWorkspaceMember}
-              voiceChannels={controller.voiceChannels}
-              voicePresence={controller.voicePresence ?? []}
-              workspace={controller.workspace}
-            />
+            <WorkspaceRightSidebar />
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>

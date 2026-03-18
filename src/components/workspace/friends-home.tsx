@@ -1,5 +1,4 @@
 import { CheckIcon, UserPlusIcon, UsersIcon, XIcon } from "lucide-react";
-import type { FormEvent } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -27,40 +26,23 @@ import {
   InputGroupText,
 } from "@/components/ui/input-group";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  useWorkspaceFriends,
+  useWorkspaceNavigation,
+  useWorkspaceView,
+} from "@/components/workspace/workspace-screen-context";
 import { getDisplayName, getInitials } from "@/lib/presentation";
-import type { Id } from "../../../convex/_generated/dataModel";
-import type { FriendsResult } from "./workspace-types";
 
-interface FriendsHomeProps {
-  friendHandleDraft: string;
-  friends: FriendsResult | undefined;
-  onAcceptRequest: (requestId: Id<"friendRequests">) => void;
-  onDeclineRequest: (requestId: Id<"friendRequests">) => void;
-  onFriendHandleChange: (value: string) => void;
-  onMessageFriend: (friendId: Id<"users">) => void;
-  onRemoveFriend: (friendId: Id<"users">) => void;
-  onSubmitFriendRequest: (event: FormEvent<HTMLFormElement>) => void;
-  onTabChange: (value: string) => void;
-  selectedTab: string;
-}
+export function FriendsHome() {
+  const view = useWorkspaceView();
+  const friends = useWorkspaceFriends();
+  const navigation = useWorkspaceNavigation();
 
-export function FriendsHome({
-  friendHandleDraft,
-  friends,
-  onAcceptRequest,
-  onDeclineRequest,
-  onFriendHandleChange,
-  onMessageFriend,
-  onRemoveFriend,
-  onSubmitFriendRequest,
-  onTabChange,
-  selectedTab,
-}: FriendsHomeProps) {
   return (
     <Tabs
       className="flex h-full flex-col"
-      onValueChange={onTabChange}
-      value={selectedTab}
+      onValueChange={friends.setFriendsTab}
+      value={friends.friendsTab}
     >
       <div className="border-border/60 border-b px-4 py-3">
         <TabsList variant="line">
@@ -79,8 +61,8 @@ export function FriendsHome({
             </CardDescription>
           </CardHeader>
           <CardContent className="flex min-h-0 flex-1 flex-col gap-3 py-4">
-            {friends?.friends.length ? (
-              friends.friends.map((friend) => (
+            {view.friends?.friends.length ? (
+              view.friends.friends.map((friend) => (
                 <div
                   className="flex items-center gap-3 rounded-xl border border-border/60 bg-muted/20 p-3"
                   key={friend._id}
@@ -100,13 +82,13 @@ export function FriendsHome({
                     </div>
                   </div>
                   <Button
-                    onClick={() => onMessageFriend(friend._id)}
+                    onClick={() => navigation.openConversation(friend._id)}
                     variant="secondary"
                   >
                     Message
                   </Button>
                   <Button
-                    onClick={() => onRemoveFriend(friend._id)}
+                    onClick={() => friends.removeFriendship(friend._id)}
                     variant="outline"
                   >
                     Remove
@@ -125,7 +107,7 @@ export function FriendsHome({
                   </EmptyDescription>
                 </EmptyHeader>
                 <EmptyContent>
-                  <Button onClick={() => onTabChange("add")}>
+                  <Button onClick={() => friends.setFriendsTab("add")}>
                     <UserPlusIcon data-icon="inline-start" />
                     Add your first friend
                   </Button>
@@ -149,8 +131,8 @@ export function FriendsHome({
               <div className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
                 Incoming
               </div>
-              {friends?.incoming.length ? (
-                friends.incoming.map((request) => (
+              {view.friends?.incoming.length ? (
+                view.friends.incoming.map((request) => (
                   <div
                     className="flex items-center gap-3 rounded-xl border border-border/60 bg-muted/20 p-3"
                     key={request._id}
@@ -171,12 +153,14 @@ export function FriendsHome({
                         @{request.fromUser?.handle ?? "unknown"}
                       </div>
                     </div>
-                    <Button onClick={() => onAcceptRequest(request._id)}>
+                    <Button
+                      onClick={() => friends.acceptFriendRequest(request._id)}
+                    >
                       <CheckIcon data-icon="inline-start" />
                       Accept
                     </Button>
                     <Button
-                      onClick={() => onDeclineRequest(request._id)}
+                      onClick={() => friends.declineFriendRequest(request._id)}
                       variant="outline"
                     >
                       <XIcon data-icon="inline-start" />
@@ -200,8 +184,8 @@ export function FriendsHome({
               <div className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
                 Outgoing
               </div>
-              {friends?.outgoing.length ? (
-                friends.outgoing.map((request) => (
+              {view.friends?.outgoing.length ? (
+                view.friends.outgoing.map((request) => (
                   <div
                     className="flex items-center gap-3 rounded-xl border border-border/60 bg-muted/20 p-3"
                     key={request._id}
@@ -265,7 +249,7 @@ export function FriendsHome({
 
             <form
               className="mt-6 flex flex-col gap-3"
-              onSubmit={onSubmitFriendRequest}
+              onSubmit={friends.submitFriendRequest}
             >
               <InputGroup className="h-18 rounded-2xl border-border/70 bg-background/60 px-3">
                 <InputGroupAddon align="inline-start">
@@ -275,14 +259,16 @@ export function FriendsHome({
                   aria-label="Friend handle"
                   className="text-base"
                   id="friend-handle-inline"
-                  onChange={(event) => onFriendHandleChange(event.target.value)}
+                  onChange={(event) =>
+                    friends.setFriendHandleDraft(event.target.value)
+                  }
                   placeholder="Add a friend with their handle"
-                  value={friendHandleDraft}
+                  value={friends.friendHandleDraft}
                 />
                 <InputGroupAddon align="inline-end">
                   <InputGroupButton
                     className="h-11 rounded-xl px-5"
-                    disabled={!friendHandleDraft.trim()}
+                    disabled={!friends.friendHandleDraft.trim()}
                     size="sm"
                     type="submit"
                     variant="default"

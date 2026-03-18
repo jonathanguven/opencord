@@ -148,8 +148,9 @@ export const joinDmCall = action({
     conversationId: v.id("conversations"),
   },
   handler: async (ctx, args): Promise<JoinDmCallResult> => {
-    const current: { user?: { _id: Id<"users">; displayName?: string | null } | null } =
-      await ctx.runQuery(api.users.current, {});
+    const current: {
+      user?: { _id: Id<"users">; displayName?: string | null } | null;
+    } | null = await ctx.runQuery(api.users.current, {});
     if (!current?.user) {
       throw new Error("Finish onboarding before joining calls.");
     }
@@ -168,7 +169,7 @@ export const joinDmCall = action({
     );
     const room: { roomKey?: string; scopeId: string } | null =
       await ctx.runQuery(internal.realtimeCalls.getRoomById, {
-      callRoomId,
+        callRoomId,
       });
     const iceServers = await generateTurnIceServers(TURN_TTL_SECONDS);
 
