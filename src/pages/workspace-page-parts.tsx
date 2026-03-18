@@ -1,4 +1,5 @@
 import { ChevronRightIcon, MessageSquareIcon } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -29,6 +30,8 @@ const MESSAGE_SKELETON_KEYS = [
   "message-skeleton-8",
 ] as const;
 
+const MESSAGE_LOADING_SKELETON_DELAY_MS = 1000;
+
 interface MessageFeedProps {
   emptyDescription: string;
   emptyTitle: string;
@@ -47,7 +50,16 @@ export function MessageFeed({
   emptyTitle,
   messages,
 }: MessageFeedProps) {
+  const shouldShowLoadingSkeleton = useDelayedLoadingState(
+    typeof messages === "undefined",
+    MESSAGE_LOADING_SKELETON_DELAY_MS
+  );
+
   if (!messages) {
+    if (!shouldShowLoadingSkeleton) {
+      return <div className="h-full" />;
+    }
+
     return (
       <div className="flex flex-col gap-2.5 p-3">
         {MESSAGE_SKELETON_KEYS.map((key) => (
@@ -109,6 +121,25 @@ export function MessageFeed({
       ))}
     </div>
   );
+}
+
+function useDelayedLoadingState(isLoading: boolean, delayMs: number) {
+  const [isDelayElapsed, setIsDelayElapsed] = useState(false);
+
+  useEffect(() => {
+    if (!isLoading) {
+      setIsDelayElapsed(false);
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setIsDelayElapsed(true);
+    }, delayMs);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [delayMs, isLoading]);
+
+  return isLoading && isDelayElapsed;
 }
 
 export function MessageComposer({

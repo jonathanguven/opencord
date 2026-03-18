@@ -4,6 +4,21 @@ import { mutation } from "./_generated/server";
 import { requireCurrentUser } from "./lib/auth";
 import { requirePermission } from "./lib/permissions";
 
+const LEADING_TEXT_CHANNEL_HASHES_PATTERN = /^#+\s*/;
+
+const normalizeChannelName = ({
+  kind,
+  name,
+}: {
+  kind: "text" | "voice";
+  name: string;
+}) => {
+  const trimmedName = name.trim();
+  return kind === "text"
+    ? trimmedName.replace(LEADING_TEXT_CHANNEL_HASHES_PATTERN, "")
+    : trimmedName;
+};
+
 export const create = mutation({
   args: {
     serverId: v.id("servers"),
@@ -15,10 +30,15 @@ export const create = mutation({
   handler: async (ctx, args) => {
     const { user } = await requireCurrentUser(ctx);
     await requirePermission(ctx, args.serverId, user._id, "manageChannels");
+    const name = normalizeChannelName({ kind: args.kind, name: args.name });
+
+    if (!name) {
+      throw new Error("Channel name is required.");
+    }
 
     return ctx.db.insert("channels", {
       ...args,
-      name: args.name.trim(),
+      name,
       createdBy: user._id,
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -40,8 +60,14 @@ export const update = mutation({
     }
 
     await requirePermission(ctx, channel.serverId, user._id, "manageChannels");
+    const name = normalizeChannelName({ kind: channel.kind, name: args.name });
+
+    if (!name) {
+      throw new Error("Channel name is required.");
+    }
+
     await ctx.db.patch(args.channelId, {
-      name: args.name.trim(),
+      name,
       access: args.access,
       updatedAt: Date.now(),
     });

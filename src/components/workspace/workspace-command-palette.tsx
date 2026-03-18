@@ -19,6 +19,7 @@ import {
   useWorkspaceView,
 } from "@/components/workspace/workspace-screen-context";
 import type { WorkspaceResult } from "@/components/workspace/workspace-types";
+import { getChannelDisplayName } from "@/lib/channel-name";
 import { getDisplayName, getInitials } from "@/lib/presentation";
 import { getChannelPath, getDmPath } from "@/lib/workspace";
 import { api } from "../../../convex/_generated/api";
@@ -150,7 +151,7 @@ export function WorkspaceCommandPalette() {
         return workspace.channels.map((channel) => ({
           id: `channel:${channel._id}`,
           kind: channel.kind,
-          label: channel.kind === "text" ? `#${channel.name}` : channel.name,
+          label: getChannelDisplayName(channel),
           path: getChannelPath(channel.serverId, channel._id),
           searchText: `${channel.name} ${serverName} ${channel.kind} ${channel.access} channel`,
           serverName,
@@ -286,7 +287,6 @@ export function WorkspaceCommandPalette() {
         description="Client-side fuzzy search across your loaded DMs and channels."
         onOpenChange={setOpen}
         open={open}
-        overlayClassName="bg-black/55 supports-backdrop-filter:backdrop-blur-none"
         title="Find conversations and channels"
       >
         <Command

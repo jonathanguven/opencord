@@ -1,4 +1,10 @@
 import {
+  DragDropContext,
+  Draggable,
+  Droppable,
+  type DropResult,
+} from "@hello-pangea/dnd";
+import {
   ChevronDownIcon,
   HashIcon,
   HeadphonesIcon,
@@ -11,7 +17,7 @@ import {
   UsersIcon,
   Volume2Icon,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -39,12 +45,14 @@ import {
 } from "@/components/ui/tooltip";
 import { WorkspaceCommandPalette } from "@/components/workspace/workspace-command-palette";
 import {
+  useWorkspaceDialogs,
   useWorkspaceFriends,
   useWorkspaceNavigation,
   useWorkspaceUi,
   useWorkspaceView,
 } from "@/components/workspace/workspace-screen-context";
 import type { VoicePresenceItem } from "@/components/workspace/workspace-types";
+import { getChannelNameText } from "@/lib/channel-name";
 import { getDisplayName, getInitials } from "@/lib/presentation";
 import { cn } from "@/lib/utils";
 import { getChannelPath, getDmPath, getServerPath } from "@/lib/workspace";
@@ -90,7 +98,7 @@ export function WorkspaceRail() {
                 <Button
                   className={cn(
                     railButtonClassName,
-                    "bg-sidebar-primary text-sidebar-primary-foreground shadow-[0_10px_30px_rgb(88_101_242_/_0.28)] hover:bg-[var(--friend-action-hover)]",
+                    "bg-sidebar-primary text-sidebar-primary-foreground shadow-[0_10px_30px_rgb(88_101_242/0.28)] hover:bg-[--friend-action-hover]",
                     view.isFriendsView &&
                       "rounded-[1rem] bg-foreground text-popover hover:bg-foreground"
                   )}
@@ -174,6 +182,7 @@ export function WorkspaceRail() {
 export function WorkspaceSidebar() {
   const view = useWorkspaceView();
   const ui = useWorkspaceUi();
+  const dialogs = useWorkspaceDialogs();
   const navigation = useWorkspaceNavigation();
   const friends = useWorkspaceFriends();
   const isFriendsHomeActive = view.isFriendsView && !view.activeConversationId;
@@ -268,7 +277,7 @@ export function WorkspaceSidebar() {
                     <DropdownMenuTrigger
                       render={
                         <button
-                          className="inline-flex h-8 w-auto max-w-full items-center rounded-xl px-2.5 font-semibold text-[0.95rem] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground data-[popup-open]:bg-accent data-[popup-open]:text-foreground"
+                          className="inline-flex h-8 w-auto max-w-full items-center rounded-xl px-2.5 font-semibold text-[0.95rem] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground data-popup-open:bg-accent data-popup-open:text-foreground"
                           type="button"
                         />
                       }
@@ -323,9 +332,16 @@ export function WorkspaceSidebar() {
 
               <ChannelSection
                 activeChannelId={view.routeChannelId}
+                canManageChannels={view.permissions.manageChannels}
                 channels={view.textChannels}
                 icon={HashIcon}
                 label="Text channels"
+                onAddChannel={() =>
+                  dialogs.openCreateChannel("text", "Text Channels")
+                }
+                onReorder={(orderedChannelIds) =>
+                  dialogs.reorderChannelSection("text", orderedChannelIds)
+                }
                 onSelect={(channelId) => {
                   if (!view.activeServerId) {
                     return;
@@ -339,10 +355,17 @@ export function WorkspaceSidebar() {
 
               <ChannelSection
                 activeChannelId={view.routeChannelId}
+                canManageChannels={view.permissions.manageChannels}
                 channels={view.voiceChannels}
                 counts={view.voicePresence}
                 icon={Volume2Icon}
                 label="Voice channels"
+                onAddChannel={() =>
+                  dialogs.openCreateChannel("voice", "Voice Channels")
+                }
+                onReorder={(orderedChannelIds) =>
+                  dialogs.reorderChannelSection("voice", orderedChannelIds)
+                }
                 onSelect={(channelId) => {
                   if (!view.activeServerId) {
                     return;
@@ -359,7 +382,7 @@ export function WorkspaceSidebar() {
       </div>
 
       <div className="border-sidebar-border border-t p-3">
-        <div className="flex items-center gap-3 rounded-2xl bg-accent px-3 py-3 shadow-[inset_0_1px_0_rgb(255_255_255_/_0.05)]">
+        <div className="flex items-center gap-3 rounded-2xl bg-accent px-3 py-3 shadow-[inset_0_1px_0_rgb(255_255_255/0.05)]">
           <Avatar className="size-11">
             <AvatarImage src={currentUser?.avatarUrl ?? undefined} />
             <AvatarFallback className="bg-primary/20 text-primary-foreground">
@@ -477,67 +500,152 @@ function DiscordDmRow({
 
 function ChannelSection({
   activeChannelId,
+  canManageChannels,
   channels,
   counts,
   icon: Icon,
   label,
+  onAddChannel,
+  onReorder,
   onSelect,
 }: {
   activeChannelId: Id<"channels"> | null;
+  canManageChannels: boolean;
   channels: Doc<"channels">[];
   counts?: VoicePresenceItem[];
   icon: typeof HashIcon;
   label: string;
+  onAddChannel: () => void;
+  onReorder: (orderedChannelIds: Id<"channels">[]) => Promise<boolean>;
   onSelect: (channelId: Id<"channels">) => void;
 }) {
+  const [orderedChannels, setOrderedChannels] = useState(channels);
+
+  useEffect(() => {
+    setOrderedChannels(channels);
+  }, [channels]);
+
+  const handleDragEnd = ({ destination, source }: DropResult) => {
+    if (!(destination && destination.index !== source.index)) {
+      return;
+    }
+
+    const previousChannels = orderedChannels;
+    const nextChannels = [...orderedChannels];
+    const [movedChannel] = nextChannels.splice(source.index, 1);
+    if (!movedChannel) {
+      return;
+    }
+
+    nextChannels.splice(destination.index, 0, movedChannel);
+    setOrderedChannels(nextChannels);
+    onReorder(nextChannels.map((channel) => channel._id)).then((didPersist) => {
+      if (!didPersist) {
+        setOrderedChannels(previousChannels);
+      }
+    });
+  };
+
   return (
     <div className="flex flex-col gap-1.5">
-      <div className="px-2 font-black text-[0.65rem] text-muted-foreground uppercase tracking-[0.16em]">
-        {label}
-      </div>
-      {channels.length ? (
-        channels.map((channel) => {
-          const count =
-            counts?.filter((entry) => entry.channelId === channel._id).length ??
-            0;
-          let trailingContent: ReactNode = null;
-
-          if (typeof counts === "undefined") {
-            if (channel.access === "private") {
-              trailingContent = (
-                <span className="rounded-full border border-sidebar-border px-2 py-0.5 font-bold text-[0.68rem] text-muted-foreground">
-                  Private
-                </span>
-              );
-            }
-          } else {
-            trailingContent = (
-              <span className="rounded-full bg-background/70 px-2 py-0.5 font-bold text-[0.7rem] text-foreground">
-                {count}
-              </span>
-            );
-          }
-
-          return (
-            <button
-              className={cn(
-                listItemClassName,
-                activeChannelId === channel._id
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
-              )}
-              key={channel._id}
-              onClick={() => onSelect(channel._id)}
-              type="button"
+      <div className="flex items-center justify-between gap-2 px-2">
+        <div className="font-black text-[0.65rem] text-muted-foreground uppercase tracking-[0.16em]">
+          {label}
+        </div>
+        {canManageChannels ? (
+          <Tooltip>
+            <TooltipTrigger
+              onClick={onAddChannel}
+              render={
+                <button
+                  className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  type="button"
+                />
+              }
             >
-              <Icon className="size-4 shrink-0" />
-              <span className="flex-1 truncate font-semibold text-[0.9rem]">
-                {channel.kind === "text" ? `# ${channel.name}` : channel.name}
-              </span>
-              <div className="shrink-0">{trailingContent}</div>
-            </button>
-          );
-        })
+              <PlusIcon className="size-4" />
+              <span className="sr-only">Create {label.toLowerCase()}</span>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              Create {label.toLowerCase()}
+            </TooltipContent>
+          </Tooltip>
+        ) : null}
+      </div>
+      {orderedChannels.length ? (
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <Droppable droppableId={label}>
+            {(droppableProvided) => (
+              <div
+                {...droppableProvided.droppableProps}
+                className="flex flex-col gap-1"
+                ref={droppableProvided.innerRef}
+              >
+                {orderedChannels.map((channel, index) => {
+                  const count =
+                    counts?.filter((entry) => entry.channelId === channel._id)
+                      .length ?? 0;
+                  let trailingContent: ReactNode = null;
+
+                  if (typeof counts === "undefined") {
+                    if (channel.access === "private") {
+                      trailingContent = (
+                        <span className="rounded-full border border-sidebar-border px-2 py-0.5 font-bold text-[0.68rem] text-muted-foreground">
+                          Private
+                        </span>
+                      );
+                    }
+                  } else {
+                    trailingContent = (
+                      <span className="rounded-full bg-background/70 px-2 py-0.5 font-bold text-[0.7rem] text-foreground">
+                        {count}
+                      </span>
+                    );
+                  }
+
+                  return (
+                    <Draggable
+                      disableInteractiveElementBlocking
+                      draggableId={channel._id}
+                      index={index}
+                      isDragDisabled={!canManageChannels}
+                      key={channel._id}
+                    >
+                      {(draggableProvided, snapshot) => (
+                        <button
+                          className={cn(
+                            listItemClassName,
+                            activeChannelId === channel._id
+                              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                              : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                            canManageChannels &&
+                              "cursor-grab active:cursor-grabbing",
+                            snapshot.isDragging &&
+                              "border border-sidebar-border bg-sidebar shadow-lg"
+                          )}
+                          onClick={() => onSelect(channel._id)}
+                          ref={draggableProvided.innerRef}
+                          {...draggableProvided.draggableProps}
+                          {...(canManageChannels
+                            ? draggableProvided.dragHandleProps
+                            : {})}
+                          type="button"
+                        >
+                          <Icon className="size-4 shrink-0" />
+                          <span className="flex-1 truncate font-semibold text-[0.9rem]">
+                            {getChannelNameText(channel)}
+                          </span>
+                          <div className="shrink-0">{trailingContent}</div>
+                        </button>
+                      )}
+                    </Draggable>
+                  );
+                })}
+                {droppableProvided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
       ) : (
         <Empty className="border border-sidebar-border bg-accent/60 p-4 text-foreground">
           <EmptyHeader>
@@ -546,6 +654,16 @@ function ChannelSection({
               Create one to start the server loop.
             </EmptyDescription>
           </EmptyHeader>
+          {canManageChannels ? (
+            <Button
+              className="mt-3 self-start"
+              onClick={onAddChannel}
+              size="sm"
+            >
+              <PlusIcon />
+              Create {label.toLowerCase()}
+            </Button>
+          ) : null}
         </Empty>
       )}
     </div>

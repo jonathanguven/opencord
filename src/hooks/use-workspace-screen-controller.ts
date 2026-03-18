@@ -15,6 +15,10 @@ import type {
   WorkspaceResult,
 } from "@/components/workspace/workspace-types";
 import { useCloudflareSfuCall } from "@/hooks/use-cloudflare-sfu-call";
+import {
+  getChannelDisplayName,
+  normalizeTextChannelName,
+} from "@/lib/channel-name";
 import { getErrorMessage } from "@/lib/errors";
 import { normalizeHandleInput, validateHandle } from "@/lib/handles";
 import { getDisplayName } from "@/lib/presentation";
@@ -132,7 +136,7 @@ const resolveHeaderTitle = ({
   }
 
   return activeChannel.kind === "text"
-    ? `#${activeChannel.name}`
+    ? getChannelDisplayName(activeChannel)
     : activeChannel.name;
 };
 
@@ -191,6 +195,7 @@ export function useWorkspaceScreenController() {
   const removeFriend = useMutation(api.friends.removeFriend);
   const createInvite = useMutation(api.invites.create);
   const createChannel = useMutation(api.channels.create);
+  const reorderChannels = useMutation(api.channels.reorder);
   const sendMessage = useMutation(api.messages.send);
   const startDmCall = useMutation(api.calls.startDmCall);
   const endDmCall = useMutation(api.calls.endDmCall);
@@ -217,6 +222,8 @@ export function useWorkspaceScreenController() {
   const [friendHandleDraft, setFriendHandleDraft] = useState("");
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false);
+  const [channelCategoryLabelDraft, setChannelCategoryLabelDraft] =
+    useState("Text Channels");
   const [channelNameDraft, setChannelNameDraft] = useState("");
   const [channelKindDraft, setChannelKindDraft] = useState<ChannelKind>("text");
   const [channelAccessDraft, setChannelAccessDraft] =
@@ -540,7 +547,10 @@ export function useWorkspaceScreenController() {
       const channelId = await createChannel({
         access: channelAccessDraft,
         kind: channelKindDraft,
-        name: channelNameDraft,
+        name:
+          channelKindDraft === "text"
+            ? normalizeTextChannelName(channelNameDraft)
+            : channelNameDraft,
         order,
         serverId: activeServerId,
       });
@@ -553,6 +563,43 @@ export function useWorkspaceScreenController() {
       toast.success("Channel created.");
     } catch (error) {
       toast.error(getErrorMessage(error));
+    }
+  };
+
+  const openCreateChannel = (kind: ChannelKind, categoryLabel: string) => {
+    setChannelKindDraft(kind);
+    setChannelCategoryLabelDraft(categoryLabel);
+    setChannelNameDraft("");
+    setChannelAccessDraft("public");
+    setIsCreateChannelOpen(true);
+  };
+
+  const reorderChannelSection = async (
+    kind: ChannelKind,
+    orderedSectionChannelIds: Id<"channels">[]
+  ) => {
+    if (!(activeServerId && workspace)) {
+      return false;
+    }
+
+    const textChannelIds =
+      kind === "text"
+        ? orderedSectionChannelIds
+        : textChannels.map((channel) => channel._id);
+    const voiceChannelIds =
+      kind === "voice"
+        ? orderedSectionChannelIds
+        : voiceChannels.map((channel) => channel._id);
+
+    try {
+      await reorderChannels({
+        orderedChannelIds: [...textChannelIds, ...voiceChannelIds],
+        serverId: activeServerId,
+      });
+      return true;
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+      return false;
     }
   };
 
@@ -832,6 +879,7 @@ export function useWorkspaceScreenController() {
     activeVoiceMembers,
     canCreateServerInvites: isServerView && canCreateInvites(workspace),
     channelAccessDraft,
+    channelCategoryLabelDraft,
     channelKindDraft,
     channelNameDraft,
     conversations,
@@ -865,10 +913,12 @@ export function useWorkspaceScreenController() {
     moveWorkspaceMember,
     navigate,
     openConversation,
+    openCreateChannel,
     permissions,
     removeFriendship,
     rightSidebarRef,
     routeChannelId,
+    reorderChannelSection,
     sendActiveMessage,
     serverDescriptionDraft,
     serverNameDraft,

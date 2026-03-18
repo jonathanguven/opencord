@@ -56,12 +56,15 @@ type WorkspaceUiContextValue = Pick<
 type WorkspaceDialogsContextValue = Pick<
   WorkspaceController,
   | "channelAccessDraft"
+  | "channelCategoryLabelDraft"
   | "channelKindDraft"
   | "channelNameDraft"
   | "copyServerInviteLink"
   | "displayNameDraft"
   | "handleDraft"
   | "handleError"
+  | "openCreateChannel"
+  | "reorderChannelSection"
   | "serverDescriptionDraft"
   | "serverNameDraft"
   | "setChannelAccessDraft"
@@ -156,6 +159,7 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
     activeVoiceMembers,
     canCreateServerInvites,
     channelAccessDraft,
+    channelCategoryLabelDraft,
     channelKindDraft,
     channelNameDraft,
     conversations,
@@ -189,8 +193,10 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
     moveWorkspaceMember,
     navigate,
     openConversation,
+    openCreateChannel,
     permissions,
     removeFriendship,
+    reorderChannelSection,
     rightSidebarRef,
     routeChannelId,
     sendActiveMessage,
@@ -316,12 +322,15 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
   const dialogsValue = useMemo(
     () => ({
       channelAccessDraft,
+      channelCategoryLabelDraft,
       channelKindDraft,
       channelNameDraft,
       copyServerInviteLink,
       displayNameDraft,
       handleDraft,
       handleError,
+      openCreateChannel,
+      reorderChannelSection,
       serverDescriptionDraft,
       serverNameDraft,
       setChannelAccessDraft,
@@ -337,12 +346,15 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
     }),
     [
       channelAccessDraft,
+      channelCategoryLabelDraft,
       channelKindDraft,
       channelNameDraft,
       copyServerInviteLink,
       displayNameDraft,
       handleDraft,
       handleError,
+      openCreateChannel,
+      reorderChannelSection,
       serverDescriptionDraft,
       serverNameDraft,
       setChannelAccessDraft,

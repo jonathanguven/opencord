@@ -75,6 +75,7 @@ function WorkspaceScreenLayout() {
 
       <CreateChannelDialog
         access={dialogs.channelAccessDraft}
+        categoryLabel={dialogs.channelCategoryLabelDraft}
         kind={dialogs.channelKindDraft}
         name={dialogs.channelNameDraft}
         onAccessChange={dialogs.setChannelAccessDraft}

@@ -5,6 +5,7 @@ import {
   useWorkspaceThread,
   useWorkspaceView,
 } from "@/components/workspace/workspace-screen-context";
+import { getChannelDisplayName } from "@/lib/channel-name";
 import {
   MessageComposer,
   MessageFeed,
@@ -37,7 +38,7 @@ export function ServerChannelPage() {
     <div className="flex h-full flex-col">
       <ScrollArea className="min-h-0 flex-1">
         <MessageFeed
-          emptyDescription={`Be the first to post in #${activeChannel.name}.`}
+          emptyDescription={`Be the first to post in ${getChannelDisplayName(activeChannel)}.`}
           emptyTitle="No messages yet"
           messages={thread.messages}
         />
@@ -47,7 +48,7 @@ export function ServerChannelPage() {
           draft={thread.messageDraft}
           onChange={thread.setMessageDraft}
           onSend={thread.sendActiveMessage}
-          placeholder={`Message #${activeChannel.name}`}
+          placeholder={`Message ${getChannelDisplayName(activeChannel)}`}
         />
       </div>
     </div>
