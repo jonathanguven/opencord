@@ -101,12 +101,15 @@ type WorkspaceThreadContextValue = Pick<
   | "cancelEditingMessage"
   | "deleteOwnMessage"
   | "editLatestOwnMessage"
+  | "editingMessageDraft"
   | "editingMessageId"
   | "editOwnMessage"
   | "messages"
   | "messageDraft"
   | "sendActiveMessage"
+  | "setEditingMessageDraft"
   | "setMessageDraft"
+  | "submitEditingMessage"
 >;
 
 type WorkspaceCallContextValue = Pick<
@@ -178,6 +181,7 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
     declineFriendRequest,
     displayNameDraft,
     editLatestOwnMessage,
+    editingMessageDraft,
     editingMessageId,
     editOwnMessage,
     forceDeafenMember,
@@ -213,6 +217,7 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
     rightSidebarRef,
     routeChannelId,
     sendActiveMessage,
+    setEditingMessageDraft,
     serverDescriptionDraft,
     serverNameDraft,
     servers,
@@ -233,6 +238,7 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
     setServerNameDraft,
     showAddFriendTab,
     startConversationCall,
+    submitEditingMessage,
     submitCreateChannel,
     submitCreateServer,
     submitFriendRequest,
@@ -421,23 +427,29 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
       cancelEditingMessage,
       deleteOwnMessage,
       editLatestOwnMessage,
+      editingMessageDraft,
       editingMessageId,
       editOwnMessage,
       messages,
       messageDraft,
       sendActiveMessage,
+      setEditingMessageDraft,
       setMessageDraft,
+      submitEditingMessage,
     }),
     [
       cancelEditingMessage,
       deleteOwnMessage,
       editLatestOwnMessage,
+      editingMessageDraft,
       editingMessageId,
       editOwnMessage,
       messages,
       messageDraft,
       sendActiveMessage,
+      setEditingMessageDraft,
       setMessageDraft,
+      submitEditingMessage,
     ]
   );
 

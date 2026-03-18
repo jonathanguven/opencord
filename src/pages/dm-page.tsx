@@ -6,6 +6,7 @@ import {
   Volume2Icon,
   VolumeXIcon,
 } from "lucide-react";
+import { useRef } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ import {
 export function DmPage() {
   const view = useWorkspaceView();
   const thread = useWorkspaceThread();
+  const composerRef = useRef<HTMLTextAreaElement | null>(null);
 
   const activeConversation = view.activeConversation;
 
@@ -44,20 +46,24 @@ export function DmPage() {
       />
       <ScrollArea className="min-h-0 flex-1">
         <MessageFeed
+          composerRef={composerRef}
           currentUserId={view.current?.user?._id}
+          editingDraft={thread.editingMessageDraft}
           editingMessageId={thread.editingMessageId}
           emptyDescription={`Start the conversation with ${conversationName}.`}
           emptyTitle="Say hello"
           messages={thread.messages}
+          onCancelEdit={thread.cancelEditingMessage}
+          onChangeEditingDraft={thread.setEditingMessageDraft}
           onDeleteMessage={thread.deleteOwnMessage}
           onEditMessage={thread.editOwnMessage}
+          onSubmitEdit={thread.submitEditingMessage}
         />
       </ScrollArea>
       <div className="border-border/60 border-t p-4">
         <MessageComposer
+          composerRef={composerRef}
           draft={thread.messageDraft}
-          editingMessageId={thread.editingMessageId}
-          onCancelEdit={thread.cancelEditingMessage}
           onChange={thread.setMessageDraft}
           onEditLatestMessage={thread.editLatestOwnMessage}
           onSend={thread.sendActiveMessage}

@@ -212,6 +212,7 @@ export function useWorkspaceScreenController() {
   const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(false);
   const [friendsTab, setFriendsTab] = useState("all");
   const [messageDraft, setMessageDraft] = useState("");
+  const [editingMessageDraft, setEditingMessageDraft] = useState("");
   const [editingMessageId, setEditingMessageId] =
     useState<Id<"messages"> | null>(null);
   const [displayNameDraft, setDisplayNameDraft] = useState("");
@@ -340,10 +341,12 @@ export function useWorkspaceScreenController() {
   useEffect(() => {
     if (activeThreadKey === null) {
       setEditingMessageId(null);
+      setEditingMessageDraft("");
       return;
     }
 
     setEditingMessageId(null);
+    setEditingMessageDraft("");
   }, [activeThreadKey]);
 
   useEffect(() => {
@@ -352,7 +355,7 @@ export function useWorkspaceScreenController() {
       !messages?.some((message) => message._id === editingMessageId)
     ) {
       setEditingMessageId(null);
-      setMessageDraft("");
+      setEditingMessageDraft("");
     }
   }, [editingMessageId, messages]);
 
@@ -632,19 +635,11 @@ export function useWorkspaceScreenController() {
     }
 
     try {
-      if (editingMessageId) {
-        await editMessage({
-          body: messageDraft,
-          messageId: editingMessageId,
-        });
-        setEditingMessageId(null);
-      } else {
-        await sendMessage({
-          body: messageDraft,
-          threadId: activeThread.threadId,
-          threadType: activeThread.threadType,
-        });
-      }
+      await sendMessage({
+        body: messageDraft,
+        threadId: activeThread.threadId,
+        threadType: activeThread.threadType,
+      });
       setMessageDraft("");
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -658,7 +653,7 @@ export function useWorkspaceScreenController() {
     }
 
     setEditingMessageId(message._id);
-    setMessageDraft(message.body);
+    setEditingMessageDraft(message.body);
     return true;
   };
 
@@ -680,7 +675,24 @@ export function useWorkspaceScreenController() {
 
   const cancelEditingMessage = () => {
     setEditingMessageId(null);
-    setMessageDraft("");
+    setEditingMessageDraft("");
+  };
+
+  const submitEditingMessage = async () => {
+    if (!editingMessageId) {
+      return;
+    }
+
+    try {
+      await editMessage({
+        body: editingMessageDraft,
+        messageId: editingMessageId,
+      });
+      setEditingMessageDraft("");
+      setEditingMessageId(null);
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    }
   };
 
   const deleteOwnMessage = async (messageId: Id<"messages">) => {
@@ -693,7 +705,7 @@ export function useWorkspaceScreenController() {
       await removeMessage({ messageId });
       if (editingMessageId === messageId) {
         setEditingMessageId(null);
-        setMessageDraft("");
+        setEditingMessageDraft("");
       }
       toast.success("Message deleted.");
     } catch (error) {
@@ -971,6 +983,7 @@ export function useWorkspaceScreenController() {
     declineFriendRequest,
     displayNameDraft,
     editLatestOwnMessage,
+    editingMessageDraft,
     editingMessageId,
     editOwnMessage,
     forceDeafenMember,
@@ -1006,6 +1019,7 @@ export function useWorkspaceScreenController() {
     routeChannelId,
     reorderChannelSection,
     sendActiveMessage,
+    setEditingMessageDraft,
     serverDescriptionDraft,
     serverNameDraft,
     servers,
@@ -1026,6 +1040,7 @@ export function useWorkspaceScreenController() {
     setServerNameDraft,
     showAddFriendTab,
     startConversationCall,
+    submitEditingMessage,
     submitCreateChannel,
     submitCreateServer,
     submitFriendRequest,

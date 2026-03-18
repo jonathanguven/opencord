@@ -3,9 +3,8 @@ import {
   MessageSquareIcon,
   PencilIcon,
   Trash2Icon,
-  XIcon,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -22,6 +21,7 @@ import {
   InputGroupTextarea,
 } from "@/components/ui/input-group";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
   TooltipContent,
@@ -44,19 +44,23 @@ const MESSAGE_SKELETON_KEYS = [
 const MESSAGE_LOADING_SKELETON_DELAY_MS = 1000;
 
 interface MessageFeedProps {
+  composerRef?: React.RefObject<HTMLTextAreaElement | null>;
   currentUserId?: string | null;
+  editingDraft: string;
   editingMessageId?: string | null;
   emptyDescription: string;
   emptyTitle: string;
   messages: MessageListItem[] | undefined;
+  onCancelEdit: () => void;
+  onChangeEditingDraft: (value: string) => void;
   onDeleteMessage: (messageId: MessageListItem["_id"]) => void;
   onEditMessage: (messageId: MessageListItem["_id"]) => void;
+  onSubmitEdit: () => void;
 }
 
 interface MessageComposerProps {
+  composerRef?: React.RefObject<HTMLTextAreaElement | null>;
   draft: string;
-  editingMessageId?: string | null;
-  onCancelEdit: () => void;
   onChange: (value: string) => void;
   onEditLatestMessage: () => boolean;
   onSend: () => void;
@@ -64,18 +68,35 @@ interface MessageComposerProps {
 }
 
 export function MessageFeed({
+  composerRef,
   currentUserId,
+  editingDraft,
   editingMessageId,
   emptyDescription,
   emptyTitle,
   messages,
+  onCancelEdit,
+  onChangeEditingDraft,
   onDeleteMessage,
   onEditMessage,
+  onSubmitEdit,
 }: MessageFeedProps) {
   const shouldShowLoadingSkeleton = useDelayedLoadingState(
     typeof messages === "undefined",
     MESSAGE_LOADING_SKELETON_DELAY_MS
   );
+  const editingTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => {
+    if (!(editingMessageId && editingTextareaRef.current)) {
+      return;
+    }
+
+    const textarea = editingTextareaRef.current;
+    const caretPosition = textarea.value.length;
+    textarea.focus();
+    textarea.setSelectionRange(caretPosition, caretPosition);
+  }, [editingMessageId]);
 
   if (!messages) {
     if (!shouldShowLoadingSkeleton) {
@@ -172,19 +193,49 @@ export function MessageFeed({
                   {formatTimestamp(message.createdAt)}
                 </span>
               </div>
-              <p className="whitespace-pre-wrap text-foreground/95 text-sm leading-5">
-                <span>{message.body}</span>
-                {message.editedAt ? (
-                  <span className="ml-1.5 inline-block text-[11px] text-muted-foreground/80">
-                    (edited)
-                  </span>
-                ) : null}
-              </p>
               {editingMessageId === message._id ? (
-                <p className="mt-1 text-[11px] text-primary">
-                  Editing this message
+                <div className="mt-1 flex w-full flex-col gap-2">
+                  <Textarea
+                    autoFocus
+                    className="min-h-11 w-full resize-none rounded-md border-border/60 bg-background/40 px-3 py-2 shadow-none focus-visible:border-border/80 focus-visible:ring-0"
+                    maxLength={4000}
+                    onChange={(event) =>
+                      onChangeEditingDraft(event.target.value)
+                    }
+                    onKeyDown={(event) => {
+                      if (event.key === "Escape") {
+                        event.preventDefault();
+                        onCancelEdit();
+                        composerRef?.current?.focus();
+                        return;
+                      }
+
+                      if (event.key === "Enter" && !event.shiftKey) {
+                        event.preventDefault();
+                        const submitResult = onSubmitEdit();
+                        Promise.resolve(submitResult).finally(() => {
+                          composerRef?.current?.focus();
+                        });
+                      }
+                    }}
+                    ref={editingTextareaRef}
+                    rows={1}
+                    value={editingDraft}
+                  />
+                  <span className="text-[11px] text-muted-foreground">
+                    esc to cancel, enter to save
+                  </span>
+                </div>
+              ) : (
+                <p className="whitespace-pre-wrap text-foreground/95 text-sm leading-5">
+                  <span>{message.body}</span>
+                  {message.editedAt ? (
+                    <span className="ml-1.5 inline-block text-[11px] text-muted-foreground/80">
+                      (edited)
+                    </span>
+                  ) : null}
                 </p>
-              ) : null}
+              )}
             </div>
           </div>
         ))}
@@ -213,9 +264,8 @@ function useDelayedLoadingState(isLoading: boolean, delayMs: number) {
 }
 
 export function MessageComposer({
-  editingMessageId,
+  composerRef,
   draft,
-  onCancelEdit,
   onChange,
   onEditLatestMessage,
   onSend,
@@ -227,12 +277,6 @@ export function MessageComposer({
         maxLength={4000}
         onChange={(event) => onChange(event.target.value)}
         onKeyDown={(event) => {
-          if (event.key === "Escape" && editingMessageId) {
-            event.preventDefault();
-            onCancelEdit();
-            return;
-          }
-
           if (
             event.key === "ArrowUp" &&
             !event.shiftKey &&
@@ -252,20 +296,11 @@ export function MessageComposer({
           }
         }}
         placeholder={placeholder}
+        ref={composerRef}
         rows={1}
         value={draft}
       />
       <InputGroupAddon align="inline-end">
-        {editingMessageId ? (
-          <InputGroupButton
-            aria-label="Cancel editing"
-            onClick={onCancelEdit}
-            size="icon-sm"
-            variant="ghost"
-          >
-            <XIcon />
-          </InputGroupButton>
-        ) : null}
         <InputGroupButton
           disabled={!draft.trim()}
           onClick={onSend}
@@ -274,18 +309,6 @@ export function MessageComposer({
           <ChevronRightIcon />
         </InputGroupButton>
       </InputGroupAddon>
-      {editingMessageId ? (
-        <div className="pointer-events-none absolute inset-x-3 -top-6 flex items-center justify-between text-[11px] text-muted-foreground">
-          <span>Editing message</span>
-          <button
-            className="pointer-events-auto text-muted-foreground transition-colors hover:text-foreground"
-            onClick={onCancelEdit}
-            type="button"
-          >
-            Cancel
-          </button>
-        </div>
-      ) : null}
     </InputGroup>
   );
 }
