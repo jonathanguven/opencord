@@ -122,7 +122,7 @@ export function MessageFeed({
       <div className="flex flex-col gap-2">
         {messages.map((message) => (
           <div
-            className="group relative flex gap-2.5 px-1 py-1.5"
+            className="group relative -mx-3 flex cursor-default gap-2.5 px-4 py-1.5 transition-colors hover:bg-white/5"
             key={message._id}
           >
             {message.authorId === currentUserId ? (
