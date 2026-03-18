@@ -273,25 +273,28 @@ export function WorkspaceCommandPalette() {
   return (
     <>
       <button
-        className="flex h-10 w-full items-center gap-2 rounded-xl border border-white/6 bg-[#1e1f22] px-3 text-left font-medium text-[#b5bac1] text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition-colors hover:border-white/10 hover:text-[#f2f3f5]"
+        className="flex h-10 w-full items-center gap-2 rounded-xl border border-sidebar-border bg-input px-3 text-left font-medium text-muted-foreground text-sm shadow-[inset_0_1px_0_rgb(255_255_255_/_0.03)] transition-colors hover:border-ring/30 hover:text-foreground"
         onClick={() => setOpen(true)}
         type="button"
       >
-        <SearchIcon className="size-4 shrink-0 text-[#8e9297]" />
+        <SearchIcon className="size-4 shrink-0 text-muted-foreground" />
         <span className="flex-1 truncate">Find conversation or channel</span>
       </button>
 
       <CommandDialog
-        className="border-white/8 bg-[#1e1f22] sm:max-w-2xl"
+        className="border-sidebar-border bg-popover sm:max-w-2xl"
         description="Client-side fuzzy search across your loaded DMs and channels."
         onOpenChange={setOpen}
         open={open}
         overlayClassName="bg-black/55 supports-backdrop-filter:backdrop-blur-none"
         title="Find conversations and channels"
       >
-        <Command className="bg-[#1e1f22] text-[#f2f3f5]" shouldFilter={false}>
+        <Command
+          className="bg-popover text-popover-foreground"
+          shouldFilter={false}
+        >
           <CommandInput
-            className="placeholder:text-[#8e9297]"
+            className="placeholder:text-muted-foreground"
             onValueChange={setQuery}
             placeholder="Search DMs, text channels, voice channels..."
             value={query}
@@ -336,7 +339,7 @@ function PaletteItem({
   onSelect: (item: SearchCommandItem) => void;
 }) {
   let shortcut = "Text";
-  let icon = <HashIcon className="text-[#8e9297]" />;
+  let icon = <HashIcon className="text-muted-foreground" />;
   let rightContent: ReactNode = <CommandShortcut>{shortcut}</CommandShortcut>;
   let labelSuffix: ReactNode = null;
   let subtitle = item.subtitle;
@@ -345,19 +348,19 @@ function PaletteItem({
     icon = (
       <Avatar className="size-6">
         <AvatarImage src={item.avatarUrl ?? undefined} />
-        <AvatarFallback className="bg-[#5865f2]/20 text-white">
+        <AvatarFallback className="bg-primary/20 text-primary-foreground">
           {getInitials(item.label)}
         </AvatarFallback>
       </Avatar>
     );
     shortcut = item.handle ? `@${item.handle}` : "";
     labelSuffix = shortcut ? (
-      <span className="truncate text-[#8e9297] text-xs">{shortcut}</span>
+      <span className="truncate text-muted-foreground text-xs">{shortcut}</span>
     ) : null;
     rightContent = null;
   } else if (item.kind === "voice") {
     shortcut = "Voice";
-    icon = <Volume2Icon className="text-[#8e9297]" />;
+    icon = <Volume2Icon className="text-muted-foreground" />;
     rightContent = <CommandShortcut>{shortcut}</CommandShortcut>;
   } else {
     subtitle = "";
@@ -374,13 +377,15 @@ function PaletteItem({
       {icon}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 truncate">
-          <span className="truncate font-medium text-[#f2f3f5] text-sm">
+          <span className="truncate font-medium text-foreground text-sm">
             {item.label}
           </span>
           {labelSuffix}
         </div>
         {subtitle ? (
-          <div className="truncate text-[#8e9297] text-xs">{subtitle}</div>
+          <div className="truncate text-muted-foreground text-xs">
+            {subtitle}
+          </div>
         ) : null}
       </div>
       {rightContent}

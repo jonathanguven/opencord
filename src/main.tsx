@@ -8,7 +8,7 @@ import { ThemeProvider } from "@/components/theme-provider.tsx";
 import { Toaster } from "@/components/ui/sonner.tsx";
 import { TooltipProvider } from "@/components/ui/tooltip.tsx";
 import { convex } from "@/lib/convex.ts";
-import App from "./app.tsx";
+import App from "./App.tsx";
 
 const rootElement = document.getElementById("root");
 

@@ -11,6 +11,7 @@ import {
 import { type ReactNode, useMemo, useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -37,7 +38,18 @@ import type {
   FriendsResult,
 } from "@/components/workspace/workspace-types";
 import { getDisplayName, getInitials } from "@/lib/presentation";
-import { cn } from "@/lib/utils";
+
+const friendsTabClassName =
+  "inline-flex items-center justify-center rounded-md px-3 py-2 font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground data-[active]:bg-secondary data-[active]:text-secondary-foreground";
+
+const searchInputClassName =
+  "h-10 bg-input/30 pr-4 pl-11 shadow-none placeholder:text-muted-foreground dark:bg-input/30";
+
+const sectionLabelClassName =
+  "mb-3 font-semibold text-muted-foreground text-xs uppercase tracking-[0.04em]";
+
+type IncomingRequest = FriendsResult["incoming"][number];
+type OutgoingRequest = FriendsResult["outgoing"][number];
 
 export function FriendsHome() {
   const view = useWorkspaceView();
@@ -56,7 +68,7 @@ export function FriendsHome() {
 
   const filteredIncoming = useMemo(
     () =>
-      filterRequests(view.friends, "incoming", normalizedQuery).sort((a, b) =>
+      filterIncomingRequests(view.friends, normalizedQuery).sort((a, b) =>
         getDisplayName(a.fromUser).localeCompare(getDisplayName(b.fromUser))
       ),
     [normalizedQuery, view.friends]
@@ -64,7 +76,7 @@ export function FriendsHome() {
 
   const filteredOutgoing = useMemo(
     () =>
-      filterRequests(view.friends, "outgoing", normalizedQuery).sort((a, b) =>
+      filterOutgoingRequests(view.friends, normalizedQuery).sort((a, b) =>
         getDisplayName(a.toUser).localeCompare(getDisplayName(b.toUser))
       ),
     [normalizedQuery, view.friends]
@@ -72,59 +84,32 @@ export function FriendsHome() {
 
   return (
     <Tabs
-      className="flex h-full flex-col bg-[#313338]"
+      className="flex h-full flex-col bg-background"
       onValueChange={friends.setFriendsTab}
       value={friends.friendsTab}
     >
-      <header className="border-white/6 border-b bg-[#313338] px-6 py-3">
+      <header className="border-b bg-background px-6 py-3">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 font-semibold text-[#f2f3f5]">
-            <UsersIcon className="size-4 text-[#b5bac1]" />
+          <div className="flex items-center gap-2 font-semibold text-foreground">
+            <UsersIcon className="size-4 text-muted-foreground" />
             <span>Friends</span>
           </div>
-          <span className="text-[#4e5058]">|</span>
+          <span className="text-border">|</span>
           <TabsList className="h-auto gap-2 p-0" variant="line">
-            <FriendsTab
-              className={
-                friends.friendsTab === "all"
-                  ? "bg-[#404249] text-white hover:bg-[#404249] hover:text-white"
-                  : "bg-transparent text-[#b5bac1] hover:bg-[#35373c] hover:text-white"
-              }
-              value="all"
-            >
-              All
-            </FriendsTab>
-            <FriendsTab
-              className={
-                friends.friendsTab === "pending"
-                  ? "bg-[#404249] text-white hover:bg-[#404249] hover:text-white"
-                  : "bg-transparent text-[#b5bac1] hover:bg-[#35373c] hover:text-white"
-              }
-              value="pending"
-            >
-              Pending
-            </FriendsTab>
-            <FriendsTab
-              className={
-                friends.friendsTab === "add"
-                  ? "bg-[#2b2d31] text-[#949cf7] hover:bg-[#2b2d31] hover:text-[#949cf7]"
-                  : "bg-[#5865f2] text-white hover:bg-[#4752c4] hover:text-white active:bg-[#4752c4]"
-              }
-              value="add"
-            >
-              Add Friend
-            </FriendsTab>
+            <FriendsTab value="all">All</FriendsTab>
+            <FriendsTab value="pending">Pending</FriendsTab>
+            <FriendsTab value="add">Add Friend</FriendsTab>
           </TabsList>
         </div>
       </header>
 
       <TabsContent className="min-h-0 flex-1" value="all">
         <div className="flex h-full min-h-0 flex-col">
-          <div className="border-white/6 border-b px-6 py-3">
+          <div className="border-b px-6 py-3">
             <div className="relative">
-              <SearchIcon className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-[#8e9297]" />
+              <SearchIcon className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                className="h-10 rounded-lg border-white/6 bg-[#1e1f22] pr-4 pl-11 text-[#f2f3f5] placeholder:text-[#8e9297] focus-visible:border-[#5865f2] focus-visible:ring-[#5865f2]/20"
+                className={searchInputClassName}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Search"
                 value={searchQuery}
@@ -134,11 +119,11 @@ export function FriendsHome() {
 
           <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6">
             <section className="pt-4">
-              <div className="mb-3 font-semibold text-[#f2f3f5] text-xs uppercase tracking-[0.04em]">
+              <div className={sectionLabelClassName}>
                 All friends - {filteredFriends.length}
               </div>
               {filteredFriends.length ? (
-                <div className="border-white/6 border-t">
+                <div className="border-t">
                   {filteredFriends.map((friend) => (
                     <FriendRow
                       friend={friend}
@@ -148,10 +133,10 @@ export function FriendsHome() {
                   ))}
                 </div>
               ) : (
-                <Empty className="border border-white/6 bg-[#2b2d31] text-[#dcddde]">
+                <Empty className="border bg-card text-foreground">
                   <EmptyHeader>
                     <EmptyMedia
-                      className="border-white/6 bg-[#1e1f22]"
+                      className="bg-muted text-muted-foreground"
                       variant="icon"
                     >
                       <UsersIcon />
@@ -165,8 +150,8 @@ export function FriendsHome() {
                   </EmptyHeader>
                   <EmptyContent>
                     <Button
-                      className="bg-[#5865f2] text-white hover:bg-[#6d78f6]"
                       onClick={() => friends.setFriendsTab("add")}
+                      variant="friend"
                     >
                       <UserPlusIcon data-icon="inline-start" />
                       Add Friend
@@ -181,11 +166,11 @@ export function FriendsHome() {
 
       <TabsContent className="min-h-0 flex-1" value="pending">
         <div className="flex h-full min-h-0 flex-col">
-          <div className="border-white/6 border-b px-6 py-3">
+          <div className="border-b px-6 py-3">
             <div className="relative">
-              <SearchIcon className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-[#8e9297]" />
+              <SearchIcon className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                className="h-10 rounded-lg border-white/6 bg-[#1e1f22] pr-4 pl-11 text-[#f2f3f5] placeholder:text-[#8e9297] focus-visible:border-[#5865f2] focus-visible:ring-[#5865f2]/20"
+                className={searchInputClassName}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Search pending requests"
                 value={searchQuery}
@@ -195,34 +180,34 @@ export function FriendsHome() {
 
           <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6">
             <section className="pt-4">
-              <div className="mb-3 font-semibold text-[#f2f3f5] text-xs uppercase tracking-[0.04em]">
+              <div className={sectionLabelClassName}>
                 Incoming - {filteredIncoming.length}
               </div>
               {filteredIncoming.length ? (
-                <div className="border-white/6 border-t">
+                <div className="border-t">
                   {filteredIncoming.map((request) => (
                     <RequestRow
                       actions={
                         <>
                           <Button
-                            className="size-9 rounded-full border border-emerald-400/20 bg-emerald-500/12 p-0 text-emerald-300 hover:bg-emerald-500/18 hover:text-emerald-200"
+                            className="rounded-full"
                             onClick={() =>
                               friends.acceptFriendRequest(request._id)
                             }
                             size="icon-sm"
-                            variant="ghost"
+                            variant="secondary"
                           >
-                            <CheckIcon className="size-4" />
+                            <CheckIcon />
                           </Button>
                           <Button
-                            className="size-9 rounded-full border border-rose-400/20 bg-rose-500/12 p-0 text-rose-300 hover:bg-rose-500/18 hover:text-rose-200"
+                            className="rounded-full"
                             onClick={() =>
                               friends.declineFriendRequest(request._id)
                             }
                             size="icon-sm"
-                            variant="ghost"
+                            variant="destructive"
                           >
-                            <XIcon className="size-4" />
+                            <XIcon />
                           </Button>
                         </>
                       }
@@ -233,7 +218,7 @@ export function FriendsHome() {
                   ))}
                 </div>
               ) : (
-                <Empty className="border border-white/6 bg-[#2b2d31] text-[#dcddde]">
+                <Empty className="border bg-card text-foreground">
                   <EmptyHeader>
                     <EmptyTitle>No incoming requests</EmptyTitle>
                     <EmptyDescription>
@@ -247,18 +232,21 @@ export function FriendsHome() {
             </section>
 
             <section className="pt-8">
-              <div className="mb-3 font-semibold text-[#f2f3f5] text-xs uppercase tracking-[0.04em]">
+              <div className={sectionLabelClassName}>
                 Outgoing - {filteredOutgoing.length}
               </div>
               {filteredOutgoing.length ? (
-                <div className="border-white/6 border-t">
+                <div className="border-t">
                   {filteredOutgoing.map((request) => (
                     <RequestRow
                       actions={
-                        <div className="flex items-center gap-2 rounded-full border border-white/8 bg-[#232428] px-3 py-1.5 text-[#b5bac1] text-xs">
-                          <Clock3Icon className="size-3.5" />
+                        <Badge
+                          className="rounded-full px-3 py-1"
+                          variant="secondary"
+                        >
+                          <Clock3Icon data-icon="inline-start" />
                           Pending
-                        </div>
+                        </Badge>
                       }
                       key={request._id}
                       status="Outgoing friend request"
@@ -267,7 +255,7 @@ export function FriendsHome() {
                   ))}
                 </div>
               ) : (
-                <Empty className="border border-white/6 bg-[#2b2d31] text-[#dcddde]">
+                <Empty className="border bg-card text-foreground">
                   <EmptyHeader>
                     <EmptyTitle>No outgoing requests</EmptyTitle>
                     <EmptyDescription>
@@ -285,12 +273,12 @@ export function FriendsHome() {
 
       <TabsContent className="min-h-0 flex-1" value="add">
         <div className="flex h-full min-h-0 flex-col">
-          <div className="border-white/6 border-b px-6 py-5">
+          <div className="border-b px-6 py-5">
             <div className="max-w-3xl">
-              <h2 className="font-bold text-[#f2f3f5] text-lg uppercase tracking-[0.02em]">
+              <h2 className="font-bold text-foreground text-lg uppercase tracking-[0.02em]">
                 Add Friend
               </h2>
-              <p className="mt-1 text-[#b5bac1] text-sm">
+              <p className="mt-1 text-muted-foreground text-sm">
                 Add friends with their Opencord handle. It is case sensitive.
               </p>
             </div>
@@ -298,11 +286,11 @@ export function FriendsHome() {
               className="mt-4 flex flex-col gap-3"
               onSubmit={friends.submitFriendRequest}
             >
-              <div className="flex h-12 items-center rounded-lg border border-[#3f4147] bg-[#1e1f22] pr-2 pl-4">
-                <span className="mr-2 shrink-0 text-[#8e9297]">@</span>
+              <div className="flex h-12 items-center rounded-lg border bg-input/30 pr-2 pl-4">
+                <span className="mr-2 shrink-0 text-muted-foreground">@</span>
                 <Input
                   aria-label="Friend handle"
-                  className="h-full border-0 bg-transparent px-0 text-[#f2f3f5] shadow-none focus-visible:ring-0"
+                  className="h-full border-0 bg-transparent px-0 shadow-none focus-visible:border-transparent focus-visible:ring-0"
                   id="friend-handle-inline"
                   onChange={(event) =>
                     friends.setFriendHandleDraft(event.target.value)
@@ -311,9 +299,9 @@ export function FriendsHome() {
                   value={friends.friendHandleDraft}
                 />
                 <Button
-                  className="rounded-md bg-[#5865f2] px-4 text-white hover:bg-[#6d78f6]"
                   disabled={!friends.friendHandleDraft.trim()}
                   type="submit"
+                  variant="friend"
                 >
                   Send Friend Request
                 </Button>
@@ -328,21 +316,13 @@ export function FriendsHome() {
 
 function FriendsTab({
   children,
-  className,
   value,
 }: {
   children: ReactNode;
-  className?: string;
   value: string;
 }) {
   return (
-    <TabsPrimitive.Tab
-      className={cn(
-        "inline-flex items-center justify-center rounded-md px-3 py-2 font-medium transition-colors",
-        className
-      )}
-      value={value}
-    >
+    <TabsPrimitive.Tab className={friendsTabClassName} value={value}>
       {children}
     </TabsPrimitive.Tab>
   );
@@ -356,19 +336,19 @@ function FriendRow({
   onMessage: () => void;
 }) {
   return (
-    <div className="flex items-center gap-3 border-white/6 border-b py-3 transition-colors hover:bg-white/[0.02]">
+    <div className="flex items-center gap-3 border-b py-3 transition-colors hover:bg-muted/40">
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <Avatar className="size-10">
           <AvatarImage src={friend.avatarUrl ?? undefined} />
-          <AvatarFallback className="bg-[#5865f2]/20 text-white">
+          <AvatarFallback className="bg-primary/15 text-primary">
             {getInitials(getDisplayName(friend))}
           </AvatarFallback>
         </Avatar>
         <div className="min-w-0">
-          <div className="truncate font-semibold text-[#f2f3f5]">
+          <div className="truncate font-semibold text-foreground">
             {getDisplayName(friend)}
           </div>
-          <div className="truncate text-[#b5bac1] text-sm">Offline</div>
+          <div className="truncate text-muted-foreground text-sm">Offline</div>
         </div>
       </div>
 
@@ -378,13 +358,13 @@ function FriendRow({
             onClick={onMessage}
             render={
               <Button
-                className="size-9 rounded-full bg-[#232428] p-0 text-[#b5bac1] hover:bg-[#2c2d31] hover:text-white"
+                className="rounded-full"
                 size="icon-sm"
-                variant="ghost"
+                variant="secondary"
               />
             }
           >
-            <MessageSquareIcon className="size-4" />
+            <MessageSquareIcon />
           </TooltipTrigger>
           <TooltipContent>message</TooltipContent>
         </Tooltip>
@@ -403,19 +383,19 @@ function RequestRow({
   user: FriendLite | null | undefined;
 }) {
   return (
-    <div className="flex items-center gap-3 border-white/6 border-b py-3">
+    <div className="flex items-center gap-3 border-b py-3">
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <Avatar className="size-10">
           <AvatarImage src={user?.avatarUrl ?? undefined} />
-          <AvatarFallback className="bg-[#5865f2]/20 text-white">
+          <AvatarFallback className="bg-primary/15 text-primary">
             {getInitials(getDisplayName(user))}
           </AvatarFallback>
         </Avatar>
         <div className="min-w-0">
-          <div className="truncate font-semibold text-[#f2f3f5]">
+          <div className="truncate font-semibold text-foreground">
             {getDisplayName(user)}
           </div>
-          <div className="truncate text-[#b5bac1] text-sm">{status}</div>
+          <div className="truncate text-muted-foreground text-sm">{status}</div>
         </div>
       </div>
       <div className="flex items-center gap-2">{actions}</div>
@@ -431,21 +411,33 @@ function filterUsers(users: FriendLite[], normalizedQuery: string) {
   return users.filter((user) => matchesUser(user, normalizedQuery));
 }
 
-function filterRequests(
+function filterIncomingRequests(
   friends: FriendsResult | undefined,
-  kind: "incoming" | "outgoing",
   normalizedQuery: string
 ) {
-  const requests = friends?.[kind] ?? [];
+  const requests: IncomingRequest[] = friends?.incoming ?? [];
 
   if (!normalizedQuery) {
     return requests;
   }
 
   return requests.filter((request) =>
-    kind === "incoming"
-      ? matchesUser(request.fromUser, normalizedQuery)
-      : matchesUser(request.toUser, normalizedQuery)
+    matchesUser(request.fromUser, normalizedQuery)
+  );
+}
+
+function filterOutgoingRequests(
+  friends: FriendsResult | undefined,
+  normalizedQuery: string
+) {
+  const requests: OutgoingRequest[] = friends?.outgoing ?? [];
+
+  if (!normalizedQuery) {
+    return requests;
+  }
+
+  return requests.filter((request) =>
+    matchesUser(request.toUser, normalizedQuery)
   );
 }
 

@@ -33,7 +33,6 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import {
   Tooltip,
   TooltipContent,
@@ -61,6 +60,12 @@ const SIDEBAR_RAIL_TONES = [
   "from-rose-500 to-red-500",
 ] as const;
 
+const railButtonClassName =
+  "size-12 rounded-[1.35rem] border border-sidebar-border bg-sidebar text-sidebar-foreground transition-all hover:bg-accent hover:text-accent-foreground";
+
+const listItemClassName =
+  "flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors";
+
 interface DiscordDmRowProps {
   active?: boolean;
   avatarUrl?: string | null;
@@ -76,32 +81,33 @@ export function WorkspaceRail() {
   const navigation = useWorkspaceNavigation();
 
   return (
-    <div className="flex w-[76px] shrink-0 flex-col items-center justify-between border-white/5 border-r bg-[#1e1f22] px-3 py-4">
-      <div className="flex flex-col items-center gap-3">
-        <Tooltip>
-          <TooltipTrigger
-            onClick={() => navigation.navigate("/channels")}
-            render={
-              <Button
-                className={cn(
-                  "size-12 rounded-[1.35rem] border border-white/5 bg-[#5865f2] text-white shadow-[0_10px_30px_rgba(88,101,242,0.35)] hover:bg-[#6d78f6]",
-                  view.isFriendsView &&
-                    "rounded-[1rem] bg-white text-[#1e1f22] hover:bg-white"
-                )}
-                size="icon-lg"
-                variant="ghost"
-              />
-            }
-          >
-            <MessageSquareIcon />
-          </TooltipTrigger>
-          <TooltipContent side="right">Friends & DMs</TooltipContent>
-        </Tooltip>
-
-        <Separator className="w-10 bg-white/8" />
+    <div className="flex w-[76px] shrink-0 flex-col items-center justify-between border-sidebar-border border-r bg-popover px-3 py-3">
+      <div className="flex w-full flex-col items-center">
+        <div className="flex h-16 w-full flex-col items-center justify-start gap-3 border-sidebar-border border-b pb-3">
+          <Tooltip>
+            <TooltipTrigger
+              onClick={() => navigation.navigate("/channels")}
+              render={
+                <Button
+                  className={cn(
+                    railButtonClassName,
+                    "bg-sidebar-primary text-sidebar-primary-foreground shadow-[0_10px_30px_rgb(88_101_242_/_0.28)] hover:bg-[var(--friend-action-hover)]",
+                    view.isFriendsView &&
+                      "rounded-[1rem] bg-foreground text-popover hover:bg-foreground"
+                  )}
+                  size="icon-lg"
+                  variant="ghost"
+                />
+              }
+            >
+              <MessageSquareIcon />
+            </TooltipTrigger>
+            <TooltipContent side="right">Friends & DMs</TooltipContent>
+          </Tooltip>
+        </div>
 
         <ScrollArea className="max-h-[calc(100svh-11rem)]">
-          <div className="flex flex-col items-center gap-3">
+          <div className="flex flex-col items-center gap-3 pt-3">
             {view.servers?.map((entry, index) => {
               if (!entry.server) {
                 return null;
@@ -119,8 +125,9 @@ export function WorkspaceRail() {
                     render={
                       <Button
                         className={cn(
-                          "size-12 rounded-[1.35rem] border border-white/5 bg-[#2b2d31] text-white transition-all hover:bg-[#35373c]",
-                          isActive && "rounded-[1rem] bg-white text-[#1e1f22]"
+                          railButtonClassName,
+                          isActive &&
+                            "rounded-[1rem] bg-foreground text-popover"
                         )}
                         size="icon-lg"
                         variant="ghost"
@@ -148,7 +155,7 @@ export function WorkspaceRail() {
             onClick={() => ui.setIsCreateServerOpen(true)}
             render={
               <Button
-                className="size-12 rounded-[1.35rem] border border-white/5 bg-[#2b2d31] text-[#dcddde] hover:bg-[#35373c]"
+                className={railButtonClassName}
                 size="icon-lg"
                 variant="ghost"
               />
@@ -160,7 +167,7 @@ export function WorkspaceRail() {
         </Tooltip>
       </div>
 
-      <div className="size-12 rounded-[1.35rem] border border-white/5 bg-[#2b2d31]" />
+      <div className="size-12 rounded-[1.35rem] border border-sidebar-border bg-sidebar" />
     </div>
   );
 }
@@ -178,9 +185,9 @@ export function WorkspaceSidebar() {
   const directMessageCount = view.conversations?.length ?? 0;
 
   return (
-    <aside className="flex h-full flex-col border-white/5 border-r bg-[#2b2d31]">
+    <aside className="flex h-full flex-col border-sidebar-border border-r bg-sidebar text-sidebar-foreground">
       {view.isFriendsView ? (
-        <div className="border-white/6 border-b p-3">
+        <div className="border-sidebar-border border-b p-3">
           <WorkspaceCommandPalette />
         </div>
       ) : null}
@@ -193,8 +200,8 @@ export function WorkspaceSidebar() {
                 className={cn(
                   "flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left font-semibold text-[0.95rem] transition-colors",
                   isFriendsHomeActive
-                    ? "bg-[#404249] text-white"
-                    : "text-[#b5bac1] hover:bg-[#35373c] hover:text-[#eceef2]"
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
                 )}
                 onClick={() => {
                   navigation.navigate("/channels");
@@ -207,11 +214,11 @@ export function WorkspaceSidebar() {
               </button>
 
               <div className="mt-3 flex items-center justify-between px-2">
-                <div className="font-semibold text-[#b5bac1] text-sm">
+                <div className="font-semibold text-muted-foreground text-sm">
                   Direct Messages
                 </div>
                 <button
-                  className="rounded-md p-1 text-[#b5bac1] transition-colors hover:bg-[#35373c] hover:text-white"
+                  className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                   onClick={navigation.showAddFriendTab}
                   type="button"
                 >
@@ -238,7 +245,7 @@ export function WorkspaceSidebar() {
                 ))}
 
                 {view.conversations?.length ? null : (
-                  <Empty className="mt-2 border border-white/8 bg-[#232428] text-[#dcddde]">
+                  <Empty className="mt-2 border border-sidebar-border bg-accent/60 text-foreground">
                     <EmptyHeader>
                       <EmptyMedia variant="icon">
                         <MessageSquareIcon />
@@ -256,13 +263,13 @@ export function WorkspaceSidebar() {
         ) : (
           <ScrollArea className="h-full">
             <div className="flex flex-col gap-4 p-3">
-              <div className="rounded-2xl border border-white/6 bg-[#232428] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+              <div className="rounded-2xl border border-sidebar-border bg-accent/60 p-4 shadow-[inset_0_1px_0_rgb(255_255_255_/_0.03)]">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="truncate font-bold text-lg text-white">
+                    <div className="truncate font-bold text-foreground text-lg">
                       {view.activeServer?.name ?? "Server"}
                     </div>
-                    <div className="mt-1 line-clamp-2 text-[#a7aab4] text-sm">
+                    <div className="mt-1 line-clamp-2 text-muted-foreground text-sm">
                       {view.activeServer?.description ||
                         "Flat channels, invite-only access, and reactive voice presence."}
                     </div>
@@ -271,7 +278,7 @@ export function WorkspaceSidebar() {
                     <DropdownMenuTrigger
                       render={
                         <Button
-                          className="rounded-xl bg-white/0 text-[#b5bac1] hover:bg-[#35373c] hover:text-white"
+                          className="rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground"
                           size="icon-sm"
                           variant="ghost"
                         />
@@ -341,39 +348,39 @@ export function WorkspaceSidebar() {
         )}
       </div>
 
-      <div className="border-white/6 border-t p-3">
-        <div className="flex items-center gap-3 rounded-2xl bg-[#22384b] px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+      <div className="border-sidebar-border border-t p-3">
+        <div className="flex items-center gap-3 rounded-2xl bg-accent px-3 py-3 shadow-[inset_0_1px_0_rgb(255_255_255_/_0.05)]">
           <Avatar className="size-11">
             <AvatarImage src={currentUser?.avatarUrl ?? undefined} />
-            <AvatarFallback className="bg-[#5865f2]/30 text-white">
+            <AvatarFallback className="bg-primary/20 text-primary-foreground">
               {getInitials(sidebarProfileName)}
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1">
-            <div className="truncate font-bold text-[#3dde8b] text-lg">
+            <div className="truncate font-bold text-foreground text-lg">
               {sidebarProfileName}
             </div>
-            <div className="truncate text-sm text-white/75">
+            <div className="truncate text-muted-foreground text-sm">
               {sidebarProfileHandle}
             </div>
-            <div className="truncate text-sm text-white/70">
+            <div className="truncate text-muted-foreground/90 text-sm">
               {view.isFriendsView
                 ? `${directMessageCount} open DMs`
                 : (view.activeServer?.name ?? "OpenCord")}
             </div>
           </div>
-          <div className="flex items-center gap-2 text-white/90">
-            <span className="rounded-lg p-1.5">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <span className="rounded-lg p-1.5 transition-colors hover:bg-background/40 hover:text-foreground">
               <MicIcon className="size-5" />
             </span>
-            <span className="rounded-lg p-1.5">
+            <span className="rounded-lg p-1.5 transition-colors hover:bg-background/40 hover:text-foreground">
               <HeadphonesIcon className="size-5" />
             </span>
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={
                   <Button
-                    className="rounded-lg p-1.5 text-white/90 hover:bg-white/10 hover:text-white"
+                    className="rounded-lg p-1.5 text-muted-foreground hover:bg-background/40 hover:text-foreground"
                     size="icon-sm"
                     variant="ghost"
                   />
@@ -407,7 +414,7 @@ export function WorkspaceSidebar() {
                 </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>
-            <ChevronDownIcon className="size-4 text-white/80" />
+            <ChevronDownIcon className="size-4 text-muted-foreground" />
           </div>
         </div>
       </div>
@@ -426,10 +433,10 @@ function DiscordDmRow({
   return (
     <button
       className={cn(
-        "flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors",
+        listItemClassName,
         active
-          ? "bg-[#404249] text-white"
-          : "text-[#b5bac1] hover:bg-[#35373c] hover:text-[#eceef2]"
+          ? "bg-sidebar-accent text-sidebar-accent-foreground"
+          : "text-muted-foreground hover:bg-accent hover:text-foreground"
       )}
       onClick={onClick}
       type="button"
@@ -437,14 +444,14 @@ function DiscordDmRow({
       <div className="relative shrink-0">
         <Avatar className="size-10">
           <AvatarImage src={avatarUrl ?? undefined} />
-          <AvatarFallback className="bg-[#5865f2]/20 text-white">
+          <AvatarFallback className="bg-primary/20 text-primary-foreground">
             {getInitials(displayName)}
           </AvatarFallback>
         </Avatar>
         <span
           className={cn(
-            "absolute right-0 bottom-0 size-3 rounded-full border-2 border-[#2b2d31]",
-            presence === "active" ? "bg-emerald-400" : "bg-[#7d818a]"
+            "absolute right-0 bottom-0 size-3 rounded-full border-2 border-sidebar",
+            presence === "active" ? "bg-emerald-400" : "bg-muted-foreground"
           )}
         />
       </div>
@@ -452,7 +459,7 @@ function DiscordDmRow({
         <div className="truncate font-semibold text-[0.98rem]">
           {displayName}
         </div>
-        <div className="truncate text-[#8e9297] text-xs">{subtitle}</div>
+        <div className="truncate text-muted-foreground text-xs">{subtitle}</div>
       </div>
     </button>
   );
@@ -475,7 +482,7 @@ function ChannelSection({
 }) {
   return (
     <div className="flex flex-col gap-2">
-      <div className="px-2 font-black text-[#949ba4] text-xs uppercase tracking-[0.16em]">
+      <div className="px-2 font-black text-muted-foreground text-xs uppercase tracking-[0.16em]">
         {label}
       </div>
       {channels.length ? (
@@ -488,14 +495,14 @@ function ChannelSection({
           if (typeof counts === "undefined") {
             if (channel.access === "private") {
               trailingContent = (
-                <span className="rounded-full border border-white/10 px-2 py-0.5 font-bold text-[#b5bac1] text-[0.68rem]">
+                <span className="rounded-full border border-sidebar-border px-2 py-0.5 font-bold text-[0.68rem] text-muted-foreground">
                   Private
                 </span>
               );
             }
           } else {
             trailingContent = (
-              <span className="rounded-full bg-white/8 px-2 py-0.5 font-bold text-[#dcddde] text-[0.7rem]">
+              <span className="rounded-full bg-background/70 px-2 py-0.5 font-bold text-[0.7rem] text-foreground">
                 {count}
               </span>
             );
@@ -504,10 +511,10 @@ function ChannelSection({
           return (
             <button
               className={cn(
-                "flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors",
+                listItemClassName,
                 activeChannelId === channel._id
-                  ? "bg-[#404249] text-white"
-                  : "text-[#b5bac1] hover:bg-[#35373c] hover:text-[#eceef2]"
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
               )}
               key={channel._id}
               onClick={() => onSelect(channel._id)}
@@ -522,7 +529,7 @@ function ChannelSection({
           );
         })
       ) : (
-        <Empty className="border border-white/8 bg-[#232428] p-4 text-[#dcddde]">
+        <Empty className="border border-sidebar-border bg-accent/60 p-4 text-foreground">
           <EmptyHeader>
             <EmptyTitle>No channels</EmptyTitle>
             <EmptyDescription>
