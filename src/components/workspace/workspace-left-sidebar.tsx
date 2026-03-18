@@ -170,6 +170,7 @@ export function WorkspaceSidebar() {
   const ui = useWorkspaceUi();
   const navigation = useWorkspaceNavigation();
   const friends = useWorkspaceFriends();
+  const isFriendsHomeActive = view.isFriendsView && !view.activeConversationId;
 
   const currentUser = view.current?.user;
   const sidebarProfileName = getDisplayName(currentUser);
@@ -197,7 +198,12 @@ export function WorkspaceSidebar() {
           <ScrollArea className="h-full">
             <div className="flex flex-col gap-2 p-3">
               <button
-                className="flex w-full items-center gap-3 rounded-2xl bg-[#404249] px-3 py-3 text-left font-semibold text-[0.95rem] text-white transition-colors"
+                className={cn(
+                  "flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left font-semibold text-[0.95rem] transition-colors",
+                  isFriendsHomeActive
+                    ? "bg-[#404249] text-white"
+                    : "text-[#b5bac1] hover:bg-[#35373c] hover:text-[#eceef2]"
+                )}
                 onClick={() => {
                   navigation.navigate("/channels");
                   friends.setFriendsTab("all");

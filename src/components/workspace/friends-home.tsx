@@ -23,6 +23,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList } from "@/components/ui/tabs";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   useWorkspaceFriends,
   useWorkspaceNavigation,
   useWorkspaceView,
@@ -368,14 +373,21 @@ function FriendRow({
       </div>
 
       <div className="flex items-center gap-2">
-        <Button
-          className="size-9 rounded-full bg-[#232428] p-0 text-[#b5bac1] hover:bg-[#2c2d31] hover:text-white"
-          onClick={onMessage}
-          size="icon-sm"
-          variant="ghost"
-        >
-          <MessageSquareIcon className="size-4" />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger
+            onClick={onMessage}
+            render={
+              <Button
+                className="size-9 rounded-full bg-[#232428] p-0 text-[#b5bac1] hover:bg-[#2c2d31] hover:text-white"
+                size="icon-sm"
+                variant="ghost"
+              />
+            }
+          >
+            <MessageSquareIcon className="size-4" />
+          </TooltipTrigger>
+          <TooltipContent>message</TooltipContent>
+        </Tooltip>
       </div>
     </div>
   );
