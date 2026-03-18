@@ -1,16 +1,22 @@
-import { StrictMode } from "react"
-import { createRoot } from "react-dom/client"
-import { ConvexAuthProvider } from "@convex-dev/auth/react"
-import { BrowserRouter } from "react-router-dom"
+import { ConvexAuthProvider } from "@convex-dev/auth/react";
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
 
-import "./index.css"
-import App from "./App.tsx"
-import { ThemeProvider } from "@/components/theme-provider.tsx"
-import { Toaster } from "@/components/ui/sonner.tsx"
-import { TooltipProvider } from "@/components/ui/tooltip.tsx"
-import { convex } from "@/lib/convex.ts"
+import "./index.css";
+import { ThemeProvider } from "@/components/theme-provider.tsx";
+import { Toaster } from "@/components/ui/sonner.tsx";
+import { TooltipProvider } from "@/components/ui/tooltip.tsx";
+import { convex } from "@/lib/convex.ts";
+import App from "./app.tsx";
 
-createRoot(document.getElementById("root")!).render(
+const rootElement = document.getElementById("root");
+
+if (!rootElement) {
+  throw new Error("Root element not found.");
+}
+
+createRoot(rootElement).render(
   <StrictMode>
     <BrowserRouter>
       <ThemeProvider>
@@ -27,4 +33,4 @@ createRoot(document.getElementById("root")!).render(
       </ThemeProvider>
     </BrowserRouter>
   </StrictMode>
-)
+);

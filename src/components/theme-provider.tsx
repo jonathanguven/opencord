@@ -1,47 +1,47 @@
-import { useEffect, type ReactNode } from "react"
-import { ThemeProvider as NextThemesProvider, useTheme } from "next-themes"
+import { ThemeProvider as NextThemesProvider, useTheme } from "next-themes";
+import { type ReactNode, useEffect } from "react";
 
-type ThemeProviderProps = {
-  children: ReactNode
-  defaultTheme?: "dark" | "light" | "system"
-  storageKey?: string
+interface ThemeProviderProps {
+  children: ReactNode;
+  defaultTheme?: "dark" | "light" | "system";
+  storageKey?: string;
 }
 
 function isEditableTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) {
-    return false
+    return false;
   }
 
   if (target.isContentEditable) {
-    return true
+    return true;
   }
 
   return Boolean(
     target.closest("input, textarea, select, [contenteditable='true']")
-  )
+  );
 }
 
 function ThemeHotkey() {
-  const { resolvedTheme, setTheme } = useTheme()
+  const { resolvedTheme, setTheme } = useTheme();
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.repeat || event.metaKey || event.ctrlKey || event.altKey) {
-        return
+        return;
       }
 
       if (event.key.toLowerCase() !== "d" || isEditableTarget(event.target)) {
-        return
+        return;
       }
 
-      setTheme(resolvedTheme === "dark" ? "light" : "dark")
-    }
+      setTheme(resolvedTheme === "dark" ? "light" : "dark");
+    };
 
-    window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [resolvedTheme, setTheme])
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [resolvedTheme, setTheme]);
 
-  return null
+  return null;
 }
 
 export function ThemeProvider({
@@ -60,5 +60,5 @@ export function ThemeProvider({
       <ThemeHotkey />
       {children}
     </NextThemesProvider>
-  )
+  );
 }

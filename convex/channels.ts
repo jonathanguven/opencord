@@ -1,5 +1,5 @@
-import { mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { mutation } from "./_generated/server";
 
 import { requireCurrentUser } from "./lib/auth";
 import { requirePermission } from "./lib/permissions";
@@ -78,8 +78,8 @@ export const reorder = mutation({
         ctx.db.patch(channelId, {
           order: (index + 1) * 10,
           updatedAt: Date.now(),
-        }),
-      ),
+        })
+      )
     );
   },
 });

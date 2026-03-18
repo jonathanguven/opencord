@@ -4,13 +4,15 @@ import {
   type PermissionSet,
 } from "./domain";
 
-export type RoleLike = {
-  position: number;
+export interface RoleLike {
   permissions: PermissionSet;
-};
+  position: number;
+}
 
 export const mergePermissionSets = (roles: RoleLike[]): PermissionSet => {
-  const ordered = [...roles].sort((left, right) => left.position - right.position);
+  const ordered = [...roles].sort(
+    (left, right) => left.position - right.position
+  );
   const merged = defaultPermissionSet();
 
   for (const role of ordered) {
@@ -29,7 +31,7 @@ export const mergePermissionSets = (roles: RoleLike[]): PermissionSet => {
 
 export const hasPermission = (
   permissions: PermissionSet,
-  permission: Permission,
+  permission: Permission
 ): boolean => permissions.admin || permissions[permission];
 
 export const normalizePairKey = (left: string, right: string) =>

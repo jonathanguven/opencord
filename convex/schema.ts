@@ -1,6 +1,6 @@
+import { authTables } from "@convex-dev/auth/server";
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
-import { authTables } from "@convex-dev/auth/server";
 
 const permissionSet = v.object({
   manageChannels: v.boolean(),
@@ -35,7 +35,7 @@ export default defineSchema({
       v.literal("pending"),
       v.literal("accepted"),
       v.literal("declined"),
-      v.literal("cancelled"),
+      v.literal("cancelled")
     ),
   })
     .index("by_pair", ["fromUserId", "toUserId"])
@@ -165,7 +165,7 @@ export default defineSchema({
     scopeId: v.string(),
     provider: v.union(
       v.literal("cloudflare-realtime-sfu"),
-      v.literal("cloudflare-realtimekit"),
+      v.literal("cloudflare-realtimekit")
     ),
     roomKey: v.optional(v.string()),
     meetingId: v.optional(v.string()),
@@ -183,7 +183,11 @@ export default defineSchema({
     audioTrackName: v.string(),
     publishedMid: v.optional(v.string()),
     subscriptionMids: v.array(v.string()),
-    status: v.union(v.literal("joining"), v.literal("connected"), v.literal("leaving")),
+    status: v.union(
+      v.literal("joining"),
+      v.literal("connected"),
+      v.literal("leaving")
+    ),
     joinedAt: v.number(),
     lastHeartbeatAt: v.number(),
   })
@@ -195,7 +199,11 @@ export default defineSchema({
   dmCallSessions: defineTable({
     conversationId: v.id("conversations"),
     startedBy: v.id("users"),
-    status: v.union(v.literal("ringing"), v.literal("active"), v.literal("ended")),
+    status: v.union(
+      v.literal("ringing"),
+      v.literal("active"),
+      v.literal("ended")
+    ),
     createdAt: v.number(),
     updatedAt: v.number(),
     endedAt: v.optional(v.number()),

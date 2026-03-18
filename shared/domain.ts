@@ -32,28 +32,28 @@ export const defaultPermissionSet = (): PermissionSet => ({
 });
 
 export interface AppUser {
-  id: string;
-  handle: string;
-  displayName: string;
   avatarUrl?: string;
   createdAt: number;
+  displayName: string;
+  handle: string;
+  id: string;
 }
 
 export interface ServerRole {
   id: string;
-  serverId: string;
   name: string;
-  position: number;
   permissions: PermissionSet;
+  position: number;
+  serverId: string;
 }
 
 export interface Channel {
+  access: ChannelAccess;
   id: string;
-  serverId: string;
   kind: ChannelKind;
   name: string;
   order: number;
-  access: ChannelAccess;
+  serverId: string;
 }
 
 export interface Conversation {
@@ -63,29 +63,29 @@ export interface Conversation {
 }
 
 export interface Message {
-  id: string;
-  threadType: ThreadType;
-  threadId: string;
   authorId: string;
   body: string;
   createdAt: number;
   editedAt?: number;
+  id: string;
+  threadId: string;
+  threadType: ThreadType;
 }
 
 export interface VoiceState {
-  userId: string;
-  serverId: string;
   channelId: string;
-  muted: boolean;
-  deafened: boolean;
   connectedAt: number;
+  deafened: boolean;
   lastHeartbeatAt: number;
+  muted: boolean;
+  serverId: string;
+  userId: string;
 }
 
 export interface CallRoom {
-  scopeType: RoomScopeType;
-  scopeId: string;
   provider: "cloudflare-realtime-sfu";
   roomKey: string;
+  scopeId: string;
+  scopeType: RoomScopeType;
   status: "ready" | "failed";
 }

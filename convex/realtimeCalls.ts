@@ -1,3 +1,4 @@
+// biome-ignore lint/style/useFilenamingConvention: Convex API references currently depend on this filename.
 // @ts-nocheck
 
 import { v } from "convex/values";
@@ -29,25 +30,6 @@ const TURN_TTL_SECONDS = 60 * 60 * 4;
 const buildRoomKey = (scopeType: "dm" | "voiceChannel", scopeId: string) =>
   scopeType === "dm" ? `dm:${scopeId}` : `voice:${scopeId}`;
 
-const requireParticipantForRoom = async (
-  ctx: any,
-  userId: string,
-  callRoomId: string
-) => {
-  const participant = await ctx.db
-    .query("callRoomParticipants")
-    .withIndex("by_user_callRoom", (query: any) =>
-      query.eq("userId", userId).eq("callRoomId", callRoomId)
-    )
-    .unique();
-
-  if (!participant) {
-    throw new Error("Call session not found.");
-  }
-
-  return participant;
-};
-
 const mergeUnique = (existing: string[], additions: string[]) => {
   return [...new Set([...existing, ...additions])];
 };
@@ -65,7 +47,7 @@ export const listParticipants = query({
 
     if (room.scopeType === "dm") {
       const conversation = await ctx.db.get(room.scopeId);
-      if (!(conversation && conversation.participantIds.includes(user._id))) {
+      if (!conversation?.participantIds.includes(user._id)) {
         throw new Error("Conversation not found.");
       }
     } else {
@@ -376,7 +358,7 @@ export const getParticipantForUser = internalQuery({
     callRoomId: v.id("callRooms"),
     userId: v.id("users"),
   },
-  handler: async (ctx, args) => {
+  handler: (ctx, args) => {
     return ctx.db
       .query("callRoomParticipants")
       .withIndex("by_user_callRoom", (query) =>
@@ -583,7 +565,7 @@ export const getRoomById = internalQuery({
   args: {
     callRoomId: v.id("callRooms"),
   },
-  handler: async (ctx, args) => {
+  handler: (ctx, args) => {
     return ctx.db.get(args.callRoomId);
   },
 });

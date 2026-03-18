@@ -4,9 +4,9 @@ export interface SessionDescription {
 }
 
 export interface IceServerConfig {
+  credential?: string;
   urls: string[];
   username?: string;
-  credential?: string;
 }
 
 export const createCloudflarePeerConnection = (

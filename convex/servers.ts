@@ -1,5 +1,5 @@
-import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { mutation, query } from "./_generated/server";
 
 import { requireCurrentUser } from "./lib/auth";
 import { canAccessChannel, requireServerMember } from "./lib/permissions";
@@ -20,7 +20,7 @@ export const list = query({
           ...membership,
           server,
         };
-      }),
+      })
     );
   },
 });
@@ -107,31 +107,41 @@ export const getWorkspace = query({
       ctx.db.get(args.serverId),
       ctx.db
         .query("roles")
-        .withIndex("by_server_position", (query) => query.eq("serverId", args.serverId))
+        .withIndex("by_server_position", (query) =>
+          query.eq("serverId", args.serverId)
+        )
         .collect(),
       ctx.db
         .query("channels")
-        .withIndex("by_server_order", (query) => query.eq("serverId", args.serverId))
+        .withIndex("by_server_order", (query) =>
+          query.eq("serverId", args.serverId)
+        )
         .collect(),
       ctx.db
         .query("serverMembers")
-        .withIndex("by_serverId", (query) => query.eq("serverId", args.serverId))
+        .withIndex("by_serverId", (query) =>
+          query.eq("serverId", args.serverId)
+        )
         .collect(),
       ctx.db
         .query("activeVoiceStates")
-        .withIndex("by_serverId", (query) => query.eq("serverId", args.serverId))
+        .withIndex("by_serverId", (query) =>
+          query.eq("serverId", args.serverId)
+        )
         .collect(),
     ]);
 
     const accessibleChannels = (
       await Promise.all(
         channels.map(async (channel) =>
-          (await canAccessChannel(ctx, channel, membership)) ? channel : null,
-        ),
+          (await canAccessChannel(ctx, channel, membership)) ? channel : null
+        )
       )
     ).filter(Boolean);
 
-    const memberUsers = await Promise.all(members.map((member) => ctx.db.get(member.userId)));
+    const memberUsers = await Promise.all(
+      members.map((member) => ctx.db.get(member.userId))
+    );
 
     return {
       server,

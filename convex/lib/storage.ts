@@ -11,15 +11,17 @@ const hasR2Config = () =>
     process.env.CLOUDFLARE_R2_ACCOUNT_ID &&
       process.env.CLOUDFLARE_R2_ACCESS_KEY_ID &&
       process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY &&
-      process.env.CLOUDFLARE_R2_BUCKET,
+      process.env.CLOUDFLARE_R2_BUCKET
   );
+
+const TRAILING_SLASH_PATTERN = /\/$/;
 
 export const getStorageStatus = () => ({
   enabled: hasR2Config(),
   publicBaseUrl: process.env.CLOUDFLARE_R2_PUBLIC_BASE_URL ?? null,
 });
 
-export const createUploadUrl = async (key: string) => {
+export const createUploadUrl = (key: string) => {
   if (!hasR2Config()) {
     throw new Error("R2 uploads are not configured yet.");
   }
@@ -34,7 +36,7 @@ export const createUploadUrl = async (key: string) => {
   };
 };
 
-export const createDownloadUrl = async (key: string) => {
+export const createDownloadUrl = (key: string) => {
   if (!hasR2Config()) {
     throw new Error("R2 downloads are not configured yet.");
   }
@@ -42,6 +44,6 @@ export const createDownloadUrl = async (key: string) => {
   const publicBaseUrl = requiredEnv("CLOUDFLARE_R2_PUBLIC_BASE_URL");
   return {
     key,
-    downloadUrl: `${publicBaseUrl.replace(/\/$/, "")}/${key}`,
+    downloadUrl: `${publicBaseUrl.replace(TRAILING_SLASH_PATTERN, "")}/${key}`,
   };
 };

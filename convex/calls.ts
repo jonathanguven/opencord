@@ -1,8 +1,14 @@
-// @ts-nocheck
-
 import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
-import { action, internalMutation, mutation, query } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
+import {
+  action,
+  internalMutation,
+  type MutationCtx,
+  mutation,
+  type QueryCtx,
+  query,
+} from "./_generated/server";
 
 import { requireCurrentUser } from "./lib/auth";
 import { generateTurnIceServers } from "./lib/cloudflare";
@@ -12,13 +18,39 @@ const TURN_TTL_SECONDS = 60 * 60 * 4;
 const resolveRoomKey = (room: { roomKey?: string; scopeId: string }) =>
   room.roomKey ?? `dm:${room.scopeId}`;
 
+type DbCtx = MutationCtx | QueryCtx;
+interface ConnectDmCallSessionResult {
+  audioTrackName: string;
+  publishedMid: string;
+  requiresImmediateRenegotiation: boolean;
+  sessionDescription:
+    | {
+        sdp: string;
+        type: "answer" | "offer";
+      }
+    | undefined;
+  sessionId: string;
+}
+interface JoinDmCallResult {
+  callRoomId: Id<"callRooms">;
+  displayName: string | null | undefined;
+  iceServers: Array<{
+    credential?: string;
+    urls: string[];
+    username?: string;
+  }>;
+  moderator: boolean;
+  roomKey: string;
+  selfUserId: Id<"users">;
+}
+
 const requireConversationParticipant = async (
-  ctx: any,
-  conversationId: string,
-  userId: string
+  ctx: DbCtx,
+  conversationId: Id<"conversations">,
+  userId: Id<"users">
 ) => {
   const conversation = await ctx.db.get(conversationId);
-  if (!(conversation && conversation.participantIds.includes(userId))) {
+  if (!conversation?.participantIds.includes(userId)) {
     throw new Error("Conversation not found.");
   }
   return conversation;
@@ -115,8 +147,9 @@ export const joinDmCall = action({
   args: {
     conversationId: v.id("conversations"),
   },
-  handler: async (ctx, args) => {
-    const current = await ctx.runQuery(api.users.current, {});
+  handler: async (ctx, args): Promise<JoinDmCallResult> => {
+    const current: { user?: { _id: Id<"users">; displayName?: string | null } | null } =
+      await ctx.runQuery(api.users.current, {});
     if (!current?.user) {
       throw new Error("Finish onboarding before joining calls.");
     }
@@ -126,17 +159,22 @@ export const joinDmCall = action({
       throw new Error("Unable to load DM call.");
     }
 
-    const callRoomId = await ctx.runMutation(
+    const callRoomId: Id<"callRooms"> = await ctx.runMutation(
       internal.realtimeCalls.ensureCallRoom,
       {
         scopeId: args.conversationId,
         scopeType: "dm",
       }
     );
-    const room = await ctx.runQuery(internal.realtimeCalls.getRoomById, {
+    const room: { roomKey?: string; scopeId: string } | null =
+      await ctx.runQuery(internal.realtimeCalls.getRoomById, {
       callRoomId,
-    });
+      });
     const iceServers = await generateTurnIceServers(TURN_TTL_SECONDS);
+
+    if (!room) {
+      throw new Error("Call room not found.");
+    }
 
     return {
       callRoomId,
@@ -160,7 +198,7 @@ export const connectDmCallSession = action({
       type: v.union(v.literal("offer"), v.literal("answer")),
     }),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<ConnectDmCallSessionResult> => {
     const current = await ctx.runQuery(api.users.current, {});
     if (!current?.user) {
       throw new Error("Finish onboarding before joining calls.");
@@ -170,7 +208,7 @@ export const connectDmCallSession = action({
       conversationId: args.conversationId,
     });
 
-    const result = await ctx.runAction(
+    const result: ConnectDmCallSessionResult = await ctx.runAction(
       internal.realtimeCalls.connectSessionForRoom,
       {
         callRoomId: args.callRoomId,

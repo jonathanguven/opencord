@@ -1,15 +1,29 @@
+import { defaultPermissionSet } from "../../shared/domain";
 import { hasPermission, mergePermissionSets } from "../../shared/permissions";
+import type { Doc, Id } from "../_generated/dataModel";
+import type { MutationCtx, QueryCtx } from "../_generated/server";
 
-export const getServerMember = async (ctx: any, serverId: string, userId: string) => {
+type DbCtx = MutationCtx | QueryCtx;
+const isPresent = <T>(value: T | null): value is T => value !== null;
+
+export const getServerMember = (
+  ctx: DbCtx,
+  serverId: Id<"servers">,
+  userId: Id<"users">
+) => {
   return ctx.db
     .query("serverMembers")
-    .withIndex("by_server_user", (query: any) =>
-      query.eq("serverId", serverId).eq("userId", userId),
+    .withIndex("by_server_user", (query) =>
+      query.eq("serverId", serverId).eq("userId", userId)
     )
     .unique();
 };
 
-export const requireServerMember = async (ctx: any, serverId: string, userId: string) => {
+export const requireServerMember = async (
+  ctx: DbCtx,
+  serverId: Id<"servers">,
+  userId: Id<"users">
+) => {
   const member = await getServerMember(ctx, serverId, userId);
   if (!member) {
     throw new Error("You are not a member of this server.");
@@ -17,7 +31,10 @@ export const requireServerMember = async (ctx: any, serverId: string, userId: st
   return member;
 };
 
-export const resolveServerPermissions = async (ctx: any, member: any) => {
+export const resolveServerPermissions = async (
+  ctx: DbCtx,
+  member: Doc<"serverMembers">
+) => {
   if (member.isOwner) {
     return {
       manageChannels: true,
@@ -30,15 +47,17 @@ export const resolveServerPermissions = async (ctx: any, member: any) => {
     };
   }
 
-  const roles = await Promise.all(member.roleIds.map((roleId: string) => ctx.db.get(roleId)));
-  return mergePermissionSets(roles.filter(Boolean));
+  const roles = await Promise.all(
+    member.roleIds.map((roleId) => ctx.db.get(roleId))
+  );
+  return mergePermissionSets(roles.filter(isPresent)) ?? defaultPermissionSet();
 };
 
 export const requirePermission = async (
-  ctx: any,
-  serverId: string,
-  userId: string,
-  permission: Parameters<typeof hasPermission>[1],
+  ctx: DbCtx,
+  serverId: Id<"servers">,
+  userId: Id<"users">,
+  permission: Parameters<typeof hasPermission>[1]
 ) => {
   const member = await requireServerMember(ctx, serverId, userId);
   const permissions = await resolveServerPermissions(ctx, member);
@@ -50,7 +69,11 @@ export const requirePermission = async (
   return { member, permissions };
 };
 
-export const canAccessChannel = async (ctx: any, channel: any, member: any) => {
+export const canAccessChannel = async (
+  ctx: DbCtx,
+  channel: Doc<"channels">,
+  member: Doc<"serverMembers">
+) => {
   if (channel.access === "public" || member.isOwner) {
     return true;
   }
@@ -62,17 +85,23 @@ export const canAccessChannel = async (ctx: any, channel: any, member: any) => {
 
   const rules = await ctx.db
     .query("channelAccessRules")
-    .withIndex("by_channelId", (query: any) => query.eq("channelId", channel._id))
+    .withIndex("by_channelId", (query) => query.eq("channelId", channel._id))
     .collect();
 
-  if (rules.some((rule: any) => rule.userId === member.userId)) {
+  if (rules.some((rule) => rule.userId === member.userId)) {
     return true;
   }
 
-  return rules.some((rule: any) => rule.roleId && member.roleIds.includes(rule.roleId));
+  return rules.some(
+    (rule) => rule.roleId && member.roleIds.includes(rule.roleId)
+  );
 };
 
-export const requireChannelAccess = async (ctx: any, channelId: string, userId: string) => {
+export const requireChannelAccess = async (
+  ctx: DbCtx,
+  channelId: Id<"channels">,
+  userId: Id<"users">
+) => {
   const channel = await ctx.db.get(channelId);
   if (!channel) {
     throw new Error("Channel not found.");

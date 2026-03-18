@@ -1,5 +1,5 @@
-import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { mutation, query } from "./_generated/server";
 
 import { requireCurrentUser } from "./lib/auth";
 import { requirePermission } from "./lib/permissions";
@@ -75,7 +75,9 @@ export const redeem = mutation({
     const { user } = await requireCurrentUser(ctx);
     const invite = await ctx.db
       .query("invites")
-      .withIndex("by_code", (query) => query.eq("code", args.code.toUpperCase()))
+      .withIndex("by_code", (query) =>
+        query.eq("code", args.code.toUpperCase())
+      )
       .unique();
 
     if (!invite || invite.revokedAt) {
@@ -93,7 +95,7 @@ export const redeem = mutation({
     const existingMembership = await ctx.db
       .query("serverMembers")
       .withIndex("by_server_user", (query) =>
-        query.eq("serverId", invite.serverId).eq("userId", user._id),
+        query.eq("serverId", invite.serverId).eq("userId", user._id)
       )
       .unique();
 

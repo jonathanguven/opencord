@@ -1,6 +1,6 @@
-import { query, mutation } from "./_generated/server";
-import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { v } from "convex/values";
+import { mutation, query } from "./_generated/server";
 
 import { ensureHandleFormat, requireCurrentUser } from "./lib/auth";
 
@@ -15,7 +15,7 @@ export const current = query({
 
     return {
       user,
-      needsOnboarding: !user?.handle || !user?.displayName,
+      needsOnboarding: !(user?.handle && user?.displayName),
     };
   },
 });
@@ -31,7 +31,9 @@ export const bootstrap = mutation({
 
     const existingHandle = await ctx.db
       .query("users")
-      .withIndex("by_handle", (query) => query.eq("handle", args.handle.toLowerCase()))
+      .withIndex("by_handle", (query) =>
+        query.eq("handle", args.handle.toLowerCase())
+      )
       .unique();
 
     if (existingHandle && existingHandle._id !== user._id) {
@@ -82,7 +84,7 @@ export const search = query({
       .filter(
         (candidate) =>
           candidate._id !== user._id &&
-          candidate.handle?.toLowerCase().includes(needle),
+          candidate.handle?.toLowerCase().includes(needle)
       )
       .slice(0, 10)
       .map((candidate) => ({

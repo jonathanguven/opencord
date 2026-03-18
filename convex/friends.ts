@@ -1,19 +1,26 @@
-// @ts-nocheck
-import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-
-import { requireCurrentUser } from "./lib/auth";
 import { normalizePairKey } from "../shared/permissions";
+import type { Id } from "./_generated/dataModel";
+import {
+  type MutationCtx,
+  mutation,
+  type QueryCtx,
+  query,
+} from "./_generated/server";
+import { requireCurrentUser } from "./lib/auth";
 
-const getFriendshipsForUser = async (ctx: any, userId: string) => {
+type DbCtx = MutationCtx | QueryCtx;
+const isPresent = <T>(value: T | null): value is T => value !== null;
+
+const getFriendshipsForUser = async (ctx: DbCtx, userId: Id<"users">) => {
   const [left, right] = await Promise.all([
     ctx.db
       .query("friendships")
-      .withIndex("by_userAId", (query: any) => query.eq("userAId", userId))
+      .withIndex("by_userAId", (query) => query.eq("userAId", userId))
       .collect(),
     ctx.db
       .query("friendships")
-      .withIndex("by_userBId", (query: any) => query.eq("userBId", userId))
+      .withIndex("by_userBId", (query) => query.eq("userBId", userId))
       .collect(),
   ]);
 
@@ -37,27 +44,27 @@ export const list = query({
     ]);
 
     const friendIds = friendships.map((friendship) =>
-      friendship.userAId === user._id ? friendship.userBId : friendship.userAId,
+      friendship.userAId === user._id ? friendship.userBId : friendship.userAId
     );
     const uniqueFriendIds = Array.from(new Set(friendIds));
-    const friends = await Promise.all(uniqueFriendIds.map((friendId) => ctx.db.get(friendId)));
+    const friends = await Promise.all(
+      uniqueFriendIds.map((friendId) => ctx.db.get(friendId))
+    );
 
     return {
-      friends: friends
-        .filter(Boolean)
-        .map((friend) => ({
-          _id: friend._id,
-          handle: friend.handle,
-          displayName: friend.displayName,
-          avatarUrl: friend.avatarUrl ?? null,
-        })),
+      friends: friends.filter(isPresent).map((friend) => ({
+        _id: friend._id,
+        handle: friend.handle,
+        displayName: friend.displayName,
+        avatarUrl: friend.avatarUrl ?? null,
+      })),
       incoming: await Promise.all(
         incoming
           .filter((request) => request.status === "pending")
           .map(async (request) => ({
             ...request,
             fromUser: await ctx.db.get(request.fromUserId),
-          })),
+          }))
       ),
       outgoing: await Promise.all(
         outgoing
@@ -65,7 +72,7 @@ export const list = query({
           .map(async (request) => ({
             ...request,
             toUser: await ctx.db.get(request.toUserId),
-          })),
+          }))
       ),
     };
   },
@@ -79,7 +86,9 @@ export const sendRequest = mutation({
     const { user } = await requireCurrentUser(ctx);
     const target = await ctx.db
       .query("users")
-      .withIndex("by_handle", (query) => query.eq("handle", args.handle.toLowerCase()))
+      .withIndex("by_handle", (query) =>
+        query.eq("handle", args.handle.toLowerCase())
+      )
       .unique();
 
     if (!target) {
@@ -102,7 +111,7 @@ export const sendRequest = mutation({
     const existingRequest = await ctx.db
       .query("friendRequests")
       .withIndex("by_pair", (query) =>
-        query.eq("fromUserId", user._id).eq("toUserId", target._id),
+        query.eq("fromUserId", user._id).eq("toUserId", target._id)
       )
       .unique();
 
@@ -143,8 +152,14 @@ export const respondToRequest = mutation({
     if (args.accept) {
       const pairKey = normalizePairKey(request.fromUserId, request.toUserId);
       const friendshipId = await ctx.db.insert("friendships", {
-        userAId: request.fromUserId < request.toUserId ? request.fromUserId : request.toUserId,
-        userBId: request.fromUserId < request.toUserId ? request.toUserId : request.fromUserId,
+        userAId:
+          request.fromUserId < request.toUserId
+            ? request.fromUserId
+            : request.toUserId,
+        userBId:
+          request.fromUserId < request.toUserId
+            ? request.toUserId
+            : request.fromUserId,
         pairKey,
         createdAt: Date.now(),
       });
@@ -159,9 +174,13 @@ export const respondToRequest = mutation({
           kind: "dm",
           participantIds: [request.fromUserId, request.toUserId].sort(),
           participantAId:
-            request.fromUserId < request.toUserId ? request.fromUserId : request.toUserId,
+            request.fromUserId < request.toUserId
+              ? request.fromUserId
+              : request.toUserId,
           participantBId:
-            request.fromUserId < request.toUserId ? request.toUserId : request.fromUserId,
+            request.fromUserId < request.toUserId
+              ? request.toUserId
+              : request.fromUserId,
           pairKey,
           createdAt: Date.now(),
           updatedAt: Date.now(),

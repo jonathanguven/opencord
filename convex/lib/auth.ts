@@ -1,6 +1,11 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
+import type { MutationCtx, QueryCtx } from "./../_generated/server";
 
-export const requireCurrentUser = async (ctx: any) => {
+const HANDLE_PATTERN = /^[a-z0-9_]{3,24}$/i;
+
+type AuthCtx = MutationCtx | QueryCtx;
+
+export const requireCurrentUser = async (ctx: AuthCtx) => {
   const userId = await getAuthUserId(ctx);
   if (!userId) {
     throw new Error("You must be signed in.");
@@ -16,9 +21,9 @@ export const requireCurrentUser = async (ctx: any) => {
 };
 
 export const ensureHandleFormat = (handle: string) => {
-  if (!/^[a-z0-9_]{3,24}$/i.test(handle)) {
+  if (!HANDLE_PATTERN.test(handle)) {
     throw new Error(
-      "Handles must be 3-24 characters and only include letters, numbers, or underscores.",
+      "Handles must be 3-24 characters and only include letters, numbers, or underscores."
     );
   }
 };

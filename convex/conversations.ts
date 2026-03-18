@@ -1,12 +1,23 @@
-import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-
-import { requireCurrentUser } from "./lib/auth";
 import { normalizePairKey } from "../shared/permissions";
+import type { Id } from "./_generated/dataModel";
+import {
+  type MutationCtx,
+  mutation,
+  type QueryCtx,
+  query,
+} from "./_generated/server";
+import { requireCurrentUser } from "./lib/auth";
 
-const ensureConversationAccess = async (ctx: any, conversationId: string, userId: string) => {
+type DbCtx = MutationCtx | QueryCtx;
+
+const ensureConversationAccess = async (
+  ctx: DbCtx,
+  conversationId: Id<"conversations">,
+  userId: Id<"users">
+) => {
   const conversation = await ctx.db.get(conversationId);
-  if (!conversation || !conversation.participantIds.includes(userId)) {
+  if (!conversation?.participantIds.includes(userId)) {
     throw new Error("Conversation not found.");
   }
   return conversation;
@@ -19,31 +30,39 @@ export const list = query({
     const [left, right] = await Promise.all([
       ctx.db
         .query("conversations")
-        .withIndex("by_participantAId", (query) => query.eq("participantAId", user._id))
+        .withIndex("by_participantAId", (query) =>
+          query.eq("participantAId", user._id)
+        )
         .collect(),
       ctx.db
         .query("conversations")
-        .withIndex("by_participantBId", (query) => query.eq("participantBId", user._id))
+        .withIndex("by_participantBId", (query) =>
+          query.eq("participantBId", user._id)
+        )
         .collect(),
     ]);
-    const conversations = [...left, ...right].sort((a, b) => b.updatedAt - a.updatedAt);
+    const conversations = [...left, ...right].sort(
+      (a, b) => b.updatedAt - a.updatedAt
+    );
 
     return Promise.all(
       conversations.map(async (conversation) => {
-        const otherUserId = conversation.participantIds.find((participantId) => participantId !== user._id);
+        const otherUserId = conversation.participantIds.find(
+          (participantId) => participantId !== user._id
+        );
         const [otherUser, latestMessage, callSessions] = await Promise.all([
           otherUserId ? ctx.db.get(otherUserId) : null,
           ctx.db
             .query("messages")
             .withIndex("by_thread", (query) =>
-              query.eq("threadType", "dm").eq("threadId", conversation._id),
+              query.eq("threadType", "dm").eq("threadId", conversation._id)
             )
             .order("desc")
             .first(),
           ctx.db
             .query("dmCallSessions")
             .withIndex("by_conversationId", (query) =>
-              query.eq("conversationId", conversation._id),
+              query.eq("conversationId", conversation._id)
             )
             .collect(),
         ]);
@@ -52,9 +71,10 @@ export const list = query({
           ...conversation,
           otherUser,
           latestMessage,
-          activeCall: callSessions.find((session) => session.status !== "ended") ?? null,
+          activeCall:
+            callSessions.find((session) => session.status !== "ended") ?? null,
         };
-      }),
+      })
     );
   },
 });
