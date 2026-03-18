@@ -40,6 +40,15 @@ import { defaultPermissionSet } from "../../shared/domain";
 type ChannelKind = Doc<"channels">["kind"];
 type ChannelAccess = Doc<"channels">["access"];
 type ServerDialogMode = "create" | "join";
+type FriendsAreaLocation =
+  | {
+      kind: "dm";
+      path: string;
+    }
+  | {
+      kind: "home";
+      path: typeof CHANNELS_PATH;
+    };
 
 const DEFAULT_INVITE_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000;
 const CHANNELS_PATH = "/channels";
@@ -239,6 +248,11 @@ export function useWorkspaceScreenController() {
   const [channelKindDraft, setChannelKindDraft] = useState<ChannelKind>("text");
   const [channelAccessDraft, setChannelAccessDraft] =
     useState<ChannelAccess>("public");
+  const [lastFriendsAreaLocation, setLastFriendsAreaLocation] =
+    useState<FriendsAreaLocation>({
+      kind: "home",
+      path: CHANNELS_PATH,
+    });
 
   const isDmRoute = location.pathname.startsWith(`${CHANNELS_PATH}/dm/`);
   const activeConversationId = isDmRoute
@@ -336,6 +350,25 @@ export function useWorkspaceScreenController() {
     activeServer,
     isFriendsView,
   });
+
+  useEffect(() => {
+    if (!isFriendsView) {
+      return;
+    }
+
+    if (activeConversationId) {
+      setLastFriendsAreaLocation({
+        kind: "dm",
+        path: getDmPath(activeConversationId),
+      });
+      return;
+    }
+
+    setLastFriendsAreaLocation({
+      kind: "home",
+      path: CHANNELS_PATH,
+    });
+  }, [activeConversationId, isFriendsView]);
 
   useEffect(() => {
     if (!current?.user) {
@@ -604,6 +637,10 @@ export function useWorkspaceScreenController() {
   const showAddFriendTab = () => {
     setFriendsTab("add");
     navigate(CHANNELS_PATH);
+  };
+
+  const navigateToFriendsArea = () => {
+    navigate(lastFriendsAreaLocation.path);
   };
 
   const submitCreateChannel = async (event: FormEvent<HTMLFormElement>) => {
@@ -1065,6 +1102,7 @@ export function useWorkspaceScreenController() {
     messages,
     moveWorkspaceMember,
     navigate,
+    navigateToFriendsArea,
     openConversation,
     openCreateChannel,
     permissions,

@@ -88,7 +88,11 @@ type WorkspaceDialogsContextValue = Pick<
 
 type WorkspaceNavigationContextValue = Pick<
   WorkspaceController,
-  "handleSignOut" | "navigate" | "openConversation" | "showAddFriendTab"
+  | "handleSignOut"
+  | "navigate"
+  | "navigateToFriendsArea"
+  | "openConversation"
+  | "showAddFriendTab"
 >;
 
 type WorkspaceFriendsContextValue = Pick<
@@ -218,6 +222,7 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
     messages,
     moveWorkspaceMember,
     navigate,
+    navigateToFriendsArea,
     openConversation,
     openCreateChannel,
     permissions,
@@ -421,10 +426,17 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
     () => ({
       handleSignOut,
       navigate,
+      navigateToFriendsArea,
       openConversation,
       showAddFriendTab,
     }),
-    [handleSignOut, navigate, openConversation, showAddFriendTab]
+    [
+      handleSignOut,
+      navigate,
+      navigateToFriendsArea,
+      openConversation,
+      showAddFriendTab,
+    ]
   );
 
   const friendsValue = useMemo(

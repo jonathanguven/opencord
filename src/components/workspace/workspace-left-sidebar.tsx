@@ -3,6 +3,7 @@ import {
   Draggable,
   type DraggableProvided,
   Droppable,
+  type DroppableProvided,
   type DropResult,
 } from "@hello-pangea/dnd";
 import {
@@ -48,7 +49,6 @@ import { WorkspaceCommandPaletteTrigger } from "@/components/workspace/workspace
 import {
   useWorkspaceCall,
   useWorkspaceDialogs,
-  useWorkspaceFriends,
   useWorkspaceNavigation,
   useWorkspaceUi,
   useWorkspaceView,
@@ -98,7 +98,7 @@ export function WorkspaceRail() {
         <div className="flex h-16 w-full flex-col items-center justify-start gap-3 border-sidebar-border border-b pb-3">
           <Tooltip>
             <TooltipTrigger
-              onClick={() => navigation.navigate("/channels")}
+              onClick={navigation.navigateToFriendsArea}
               render={
                 <Button
                   className={cn(
@@ -190,7 +190,6 @@ export function WorkspaceSidebar() {
   const ui = useWorkspaceUi();
   const dialogs = useWorkspaceDialogs();
   const navigation = useWorkspaceNavigation();
-  const friends = useWorkspaceFriends();
   const isFriendsHomeActive = view.isFriendsView && !view.activeConversationId;
 
   const currentUser = view.current?.user;
@@ -217,10 +216,7 @@ export function WorkspaceSidebar() {
                     ? "bg-sidebar-accent text-sidebar-accent-foreground"
                     : "text-muted-foreground hover:bg-accent hover:text-foreground"
                 )}
-                onClick={() => {
-                  navigation.navigate("/channels");
-                  friends.setFriendsTab("all");
-                }}
+                onClick={() => navigation.navigate("/channels")}
                 type="button"
                 variant="plain"
               >
@@ -597,11 +593,7 @@ function ChannelSection({
         <DragDropContext onDragEnd={handleDragEnd}>
           <Droppable droppableId={label}>
             {(droppableProvided) => (
-              <div
-                {...droppableProvided.droppableProps}
-                className="flex flex-col gap-1"
-                ref={droppableProvided.innerRef}
-              >
+              <DroppableChannelList droppableProvided={droppableProvided}>
                 {orderedChannels.map((channel, index) => {
                   const channelMembers =
                     counts?.filter(
@@ -662,8 +654,7 @@ function ChannelSection({
                     </Draggable>
                   );
                 })}
-                {droppableProvided.placeholder}
-              </div>
+              </DroppableChannelList>
             )}
           </Droppable>
         </DragDropContext>
@@ -687,6 +678,27 @@ function ChannelSection({
           ) : null}
         </Empty>
       )}
+    </div>
+  );
+}
+
+function DroppableChannelList({
+  children,
+  droppableProvided,
+}: {
+  children: ReactNode;
+  droppableProvided: DroppableProvided;
+}) {
+  "use no memo";
+
+  return (
+    <div
+      {...droppableProvided.droppableProps}
+      className="flex flex-col gap-1"
+      ref={droppableProvided.innerRef}
+    >
+      {children}
+      {droppableProvided.placeholder}
     </div>
   );
 }
@@ -720,6 +732,8 @@ function ChannelRow({
   startedAt: number | null;
   trailingContent: ReactNode;
 }) {
+  "use no memo";
+
   return (
     <Button
       className={cn(
