@@ -5,22 +5,25 @@ import { ServerChannelPage } from "@/pages/server-channel-page";
 import { ThreadLoadingState } from "@/pages/workspace-page-parts";
 export function WorkspaceMainContent() {
   const view = useWorkspaceView();
+  let content: React.ReactNode;
 
   if (view.isFriendsView) {
     if (view.activeConversation) {
-      return <DmPage />;
+      content = <DmPage />;
+    } else if (view.activeConversationId) {
+      content = <ThreadLoadingState />;
+    } else {
+      content = <ChannelsPage />;
     }
-
-    if (view.activeConversationId) {
-      return <ThreadLoadingState />;
-    }
-
-    return <ChannelsPage />;
+  } else if (view.activeChannel) {
+    content = <ServerChannelPage />;
+  } else {
+    content = <ThreadLoadingState />;
   }
 
-  if (view.activeChannel) {
-    return <ServerChannelPage />;
-  }
-
-  return <ThreadLoadingState />;
+  return (
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      {content}
+    </div>
+  );
 }
