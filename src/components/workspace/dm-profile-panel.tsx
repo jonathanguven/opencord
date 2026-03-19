@@ -16,6 +16,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import type { ConversationListItem } from "@/components/workspace/workspace-types";
+import { getMessagePreview } from "@/lib/message-preview";
 import { getDisplayName, getInitials } from "@/lib/presentation";
 
 interface DmProfilePanelProps {
@@ -57,7 +58,10 @@ export function DmProfilePanel({ conversation }: DmProfilePanelProps) {
         <CardContent>
           <div className="rounded-xl border border-border/60 bg-muted/20 p-3 text-muted-foreground text-sm">
             Latest activity:{" "}
-            {conversation.latestMessage?.body ?? "No messages exchanged yet."}
+            {getMessagePreview(
+              conversation.latestMessage,
+              "No messages exchanged yet."
+            )}
           </div>
         </CardContent>
       </Card>

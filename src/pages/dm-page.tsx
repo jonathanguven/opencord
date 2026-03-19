@@ -69,16 +69,24 @@ export function DmPage() {
           onCancelEdit={thread.cancelEditingMessage}
           onChangeEditingDraft={thread.setEditingMessageDraft}
           onDeleteMessage={thread.deleteOwnMessage}
+          onDeleteMessageImage={thread.deleteOwnMessageImage}
           onEditMessage={thread.editOwnMessage}
           onSubmitEdit={thread.submitEditingMessage}
         />
       </ScrollArea>
       <div className="border-border/60 border-t p-4">
         <MessageBox
+          attachment={thread.pendingImageAttachment}
           draft={thread.messageDraft}
           onChange={thread.setMessageDraft}
           onEditLatestMessage={thread.editLatestOwnMessage}
+          onRemoveAttachment={() =>
+            thread
+              .clearPendingImageAttachment({ deleteRemote: true })
+              .catch(() => undefined)
+          }
           onSend={thread.sendActiveMessage}
+          onUploadImage={thread.attachImageToDraft}
           placeholder={`Message ${conversationName}`}
           textareaRef={composerRef}
         />

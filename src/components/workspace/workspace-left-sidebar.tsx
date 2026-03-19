@@ -64,6 +64,7 @@ import {
 } from "@/components/workspace/workspace-screen-context";
 import type { VoicePresenceItem } from "@/components/workspace/workspace-types";
 import { getChannelNameText } from "@/lib/channel-name";
+import { getMessagePreview } from "@/lib/message-preview";
 import { getDisplayName, getInitials } from "@/lib/presentation";
 import { cn } from "@/lib/utils";
 import { getChannelPath, getDmPath, getServerPath } from "@/lib/workspace";
@@ -306,9 +307,10 @@ export function WorkspaceSidebar() {
                       navigation.navigate(getDmPath(conversation._id))
                     }
                     presence={conversation.activeCall ? "active" : "idle"}
-                    subtitle={
-                      conversation.latestMessage?.body ?? "Start chatting"
-                    }
+                    subtitle={getMessagePreview(
+                      conversation.latestMessage,
+                      "Start chatting"
+                    )}
                   />
                 ))}
 

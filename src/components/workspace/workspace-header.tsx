@@ -10,89 +10,24 @@ import {
   useWorkspaceUi,
   useWorkspaceView,
 } from "@/components/workspace/workspace-screen-context";
+import type { ConversationListItem } from "@/components/workspace/workspace-types";
 import { getChannelNameText } from "@/lib/channel-name";
 
 export function WorkspaceHeader() {
   const view = useWorkspaceView();
   const ui = useWorkspaceUi();
   const call = useWorkspaceCall();
-  const isVoiceChannelView = view.activeChannel?.kind === "voice";
-  let callActionLabel = "Start call";
   const isInConversationCall =
     view.activeConversation?._id &&
     call.activeCall?.kind === "dm" &&
     call.activeCall.conversationId === view.activeConversation._id;
-  const hasActiveConversationCall = Boolean(
-    view.activeConversation?.activeCall
-  );
   const activeTextChannel =
     view.activeChannel?.kind === "text" ? view.activeChannel : null;
-
-  if (isInConversationCall) {
-    callActionLabel = call.isCallConnecting ? "Cancel" : "Leave call";
-  } else if (hasActiveConversationCall) {
-    callActionLabel = "Join call";
-  }
-
-  let rightSidebarLabel = ui.isRightSidebarCollapsed
-    ? "Show Member List"
-    : "Hide Member List";
-
-  if (view.isFriendsView) {
-    rightSidebarLabel = ui.isRightSidebarCollapsed
-      ? "Show User Profile"
-      : "Hide User Profile";
-  } else if (isVoiceChannelView) {
-    rightSidebarLabel = ui.isRightSidebarCollapsed
-      ? "Show Voice Chat"
-      : "Hide Voice Chat";
-  }
-
-  let callActionButton: React.ReactNode = null;
-  let rightSidebarIcon: React.ReactNode = <MemberListIcon />;
-
-  if (view.isFriendsView && view.activeConversation) {
-    if (callActionLabel === "Start call") {
-      callActionButton = (
-        <Tooltip>
-          <TooltipTrigger
-            aria-label="start voice call"
-            onClick={call.startConversationCall}
-            render={
-              <Button
-                className="size-7 rounded-[min(var(--radius-md),12px)] text-muted-foreground hover:bg-accent hover:text-foreground"
-                size="icon-sm"
-                type="button"
-                variant="plain"
-              />
-            }
-          >
-            <StartVoiceCallIcon />
-          </TooltipTrigger>
-          <TooltipContent>start voice call</TooltipContent>
-        </Tooltip>
-      );
-    } else {
-      callActionButton = (
-        <Button
-          onClick={
-            isInConversationCall
-              ? call.leaveActiveCall
-              : call.startConversationCall
-          }
-          variant="outline"
-        >
-          {callActionLabel}
-        </Button>
-      );
-    }
-  }
-
-  if (view.isFriendsView) {
-    rightSidebarIcon = <UserProfileIcon />;
-  } else if (isVoiceChannelView) {
-    rightSidebarIcon = <MessageCircleIcon />;
-  }
+  const rightSidebarToggle = getRightSidebarToggle({
+    isFriendsView: view.isFriendsView,
+    isRightSidebarCollapsed: ui.isRightSidebarCollapsed,
+    isVoiceChannelView: view.activeChannel?.kind === "voice",
+  });
 
   return (
     <header className="flex items-center justify-between gap-3 border-border/60 border-b px-3 py-2">
@@ -116,7 +51,14 @@ export function WorkspaceHeader() {
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-2">
-        {callActionButton}
+        <ConversationCallAction
+          activeConversation={view.activeConversation}
+          isCallConnecting={call.isCallConnecting}
+          isFriendsView={view.isFriendsView}
+          isInConversationCall={Boolean(isInConversationCall)}
+          onLeaveActiveCall={call.leaveActiveCall}
+          onStartConversationCall={call.startConversationCall}
+        />
         <Tooltip>
           <TooltipTrigger
             onClick={ui.toggleRightSidebar}
@@ -129,13 +71,106 @@ export function WorkspaceHeader() {
               />
             }
           >
-            {rightSidebarIcon}
+            {rightSidebarToggle.icon}
           </TooltipTrigger>
-          <TooltipContent>{rightSidebarLabel}</TooltipContent>
+          <TooltipContent>{rightSidebarToggle.label}</TooltipContent>
         </Tooltip>
       </div>
     </header>
   );
+}
+
+function ConversationCallAction({
+  activeConversation,
+  isCallConnecting,
+  isFriendsView,
+  isInConversationCall,
+  onLeaveActiveCall,
+  onStartConversationCall,
+}: {
+  activeConversation: ConversationListItem | null;
+  isCallConnecting: boolean;
+  isFriendsView: boolean;
+  isInConversationCall: boolean;
+  onLeaveActiveCall: () => void;
+  onStartConversationCall: () => void;
+}) {
+  if (!(isFriendsView && activeConversation)) {
+    return null;
+  }
+
+  const hasActiveConversationCall = Boolean(activeConversation.activeCall);
+  let callActionLabel = "Start call";
+
+  if (isInConversationCall) {
+    callActionLabel = isCallConnecting ? "Cancel" : "Leave call";
+  } else if (hasActiveConversationCall) {
+    callActionLabel = "Join call";
+  }
+
+  if (callActionLabel === "Start call") {
+    return (
+      <Tooltip>
+        <TooltipTrigger
+          aria-label="start voice call"
+          onClick={onStartConversationCall}
+          render={
+            <Button
+              className="size-7 rounded-[min(var(--radius-md),12px)] text-muted-foreground hover:bg-accent hover:text-foreground"
+              size="icon-sm"
+              type="button"
+              variant="plain"
+            />
+          }
+        >
+          <StartVoiceCallIcon />
+        </TooltipTrigger>
+        <TooltipContent>start voice call</TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return (
+    <Button
+      onClick={
+        isInConversationCall ? onLeaveActiveCall : onStartConversationCall
+      }
+      variant="outline"
+    >
+      {callActionLabel}
+    </Button>
+  );
+}
+
+function getRightSidebarToggle({
+  isFriendsView,
+  isRightSidebarCollapsed,
+  isVoiceChannelView,
+}: {
+  isFriendsView: boolean;
+  isRightSidebarCollapsed: boolean;
+  isVoiceChannelView: boolean;
+}) {
+  if (isFriendsView) {
+    return {
+      icon: <UserProfileIcon />,
+      label: isRightSidebarCollapsed
+        ? "Show User Profile"
+        : "Hide User Profile",
+    };
+  }
+
+  if (isVoiceChannelView) {
+    return {
+      icon: <MessageCircleIcon />,
+      label: isRightSidebarCollapsed ? "Show Voice Chat" : "Hide Voice Chat",
+    };
+  }
+
+  return {
+    icon: <MemberListIcon />,
+    label: isRightSidebarCollapsed ? "Show Member List" : "Hide Member List",
+  };
 }
 
 function StartVoiceCallIcon() {

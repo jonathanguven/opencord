@@ -44,6 +44,7 @@ interface MessageFeedProps {
   onCancelEdit: () => void;
   onChangeEditingDraft: (value: string) => void;
   onDeleteMessage: (messageId: MessageListItem["_id"]) => void;
+  onDeleteMessageImage: (messageId: MessageListItem["_id"]) => void;
   onEditMessage: (messageId: MessageListItem["_id"]) => void;
   onSubmitEdit: () => void;
 }
@@ -59,6 +60,7 @@ export function MessageFeed({
   onCancelEdit,
   onChangeEditingDraft,
   onDeleteMessage,
+  onDeleteMessageImage,
   onEditMessage,
   onSubmitEdit,
 }: MessageFeedProps) {
@@ -212,14 +214,52 @@ export function MessageFeed({
                   </span>
                 </div>
               ) : (
-                <p className="whitespace-pre-wrap text-foreground/95 text-sm leading-5">
-                  <span>{message.body}</span>
-                  {message.editedAt ? (
-                    <span className="ml-1.5 inline-block text-[11px] text-muted-foreground/80">
-                      (edited)
-                    </span>
+                <div className="mt-1 flex flex-col gap-2">
+                  {message.body ? (
+                    <p className="whitespace-pre-wrap text-foreground/95 text-sm leading-5">
+                      <span>{message.body}</span>
+                      {message.editedAt ? (
+                        <span className="ml-1.5 inline-block text-[11px] text-muted-foreground/80">
+                          (edited)
+                        </span>
+                      ) : null}
+                    </p>
                   ) : null}
-                </p>
+                  {message.imageUrl ? (
+                    <div className="group/image relative w-fit max-w-full">
+                      <img
+                        alt={`Uploaded by ${getDisplayName(message.author)}`}
+                        className="max-h-80 max-w-full rounded-lg border border-border/60 bg-muted/20 object-cover"
+                        height={720}
+                        loading="lazy"
+                        src={message.imageUrl}
+                        width={1280}
+                      />
+                      {message.authorId === currentUserId &&
+                      message.body.trim() ? (
+                        <Tooltip>
+                          <TooltipTrigger
+                            render={
+                              <Button
+                                aria-label="Delete image attachment"
+                                className="absolute top-2 right-2 size-8 rounded-md bg-muted/95 text-white opacity-0 shadow-lg backdrop-blur-sm transition-all hover:scale-105 hover:bg-destructive hover:text-white group-hover/image:opacity-100"
+                                onClick={() =>
+                                  onDeleteMessageImage(message._id)
+                                }
+                                size="icon"
+                                type="button"
+                                variant="plain"
+                              />
+                            }
+                          >
+                            <Trash2Icon className="size-4" />
+                          </TooltipTrigger>
+                          <TooltipContent>Delete image</TooltipContent>
+                        </Tooltip>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
               )}
             </div>
           </div>

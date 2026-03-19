@@ -19,6 +19,13 @@ export interface FriendsResult {
 
 export interface MessageListItem extends Doc<"messages"> {
   author: Doc<"users"> | null;
+  imageUrl?: string | null;
+}
+
+export interface PendingMessageImage {
+  fileName: string;
+  isUploading: boolean;
+  previewUrl: string;
 }
 
 export interface ConversationListItem extends Doc<"conversations"> {

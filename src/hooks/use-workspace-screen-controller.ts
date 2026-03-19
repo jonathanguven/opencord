@@ -1,6 +1,13 @@
 import { useAuthActions } from "@convex-dev/auth/react";
+import { useUploadFile } from "@convex-dev/r2/react";
 import { useAction, useMutation, useQuery } from "convex/react";
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import {
+  type FormEvent,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import type { PanelImperativeHandle } from "react-resizable-panels";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -10,6 +17,7 @@ import type {
   ConversationListItem,
   FriendsResult,
   MessageListItem,
+  PendingMessageImage,
   ServerListItem,
   VoicePresenceItem,
   WorkspaceResult,
@@ -21,6 +29,7 @@ import {
 } from "@/lib/channel-name";
 import { getErrorMessage } from "@/lib/errors";
 import { normalizeHandleInput, validateHandle } from "@/lib/handles";
+import { getMessagePreview } from "@/lib/message-preview";
 import { getDisplayName } from "@/lib/presentation";
 import {
   buildInviteLink,
@@ -52,6 +61,7 @@ type FriendsAreaLocation =
 
 const DEFAULT_INVITE_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000;
 const CHANNELS_PATH = "/channels";
+const MAX_MESSAGE_IMAGE_BYTES = 20 * 1024 * 1024;
 
 const toVoiceCallState = (
   session: {
@@ -161,8 +171,8 @@ const resolveHeaderSubtitle = ({
   isFriendsView: boolean;
 }) => {
   if (isFriendsView) {
-    return (
-      activeConversation?.latestMessage?.body ||
+    return getMessagePreview(
+      activeConversation?.latestMessage,
       "Direct messages with your trusted circle."
     );
   }
@@ -210,10 +220,13 @@ export function useWorkspaceScreenController() {
   const sendMessage = useMutation(api.messages.send);
   const editMessage = useMutation(api.messages.edit);
   const removeMessage = useMutation(api.messages.remove);
+  const removeMessageImage = useMutation(api.messages.removeImage);
+  const deleteUploadedObject = useMutation(api.r2.deleteObject);
   const startDmCall = useMutation(api.calls.startDmCall);
   const endDmCall = useMutation(api.calls.endDmCall);
   const joinDmCall = useAction(api.calls.joinDmCall);
   const joinVoice = useAction(api.voice.joinVoice);
+  const uploadMessageImage = useUploadFile(api.r2);
   const heartbeat = useMutation(api.voice.heartbeat);
   const updateSelfMedia = useMutation(api.voice.updateSelfMedia);
   const leaveVoice = useMutation(api.voice.leave);
@@ -226,6 +239,8 @@ export function useWorkspaceScreenController() {
   const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(false);
   const [friendsTab, setFriendsTab] = useState("all");
   const [messageDraft, setMessageDraft] = useState("");
+  const [pendingImageAttachment, setPendingImageAttachment] =
+    useState<PendingMessageImage | null>(null);
   const [editingMessageDraft, setEditingMessageDraft] = useState("");
   const [editingMessageId, setEditingMessageId] =
     useState<Id<"messages"> | null>(null);
@@ -267,6 +282,9 @@ export function useWorkspaceScreenController() {
       kind: "home",
       path: CHANNELS_PATH,
     });
+  const pendingImageAttachmentRef = useRef<PendingMessageImage | null>(null);
+  const pendingImageAttachmentKeyRef = useRef<string | null>(null);
+  const imageUploadGenerationRef = useRef(0);
 
   const isDmRoute = location.pathname.startsWith(`${CHANNELS_PATH}/dm/`);
   const activeConversationId = isDmRoute
@@ -395,15 +413,45 @@ export function useWorkspaceScreenController() {
   }, [current]);
 
   useEffect(() => {
+    pendingImageAttachmentRef.current = pendingImageAttachment;
+  }, [pendingImageAttachment]);
+
+  useLayoutEffect(() => {
     if (activeThreadKey === null) {
+      if (pendingImageAttachmentKeyRef.current) {
+        deleteUploadedObject({
+          key: pendingImageAttachmentKeyRef.current,
+        }).catch(() => undefined);
+      }
+      pendingImageAttachmentKeyRef.current = null;
+      imageUploadGenerationRef.current += 1;
+      setPendingImageAttachment((currentAttachment) => {
+        if (currentAttachment) {
+          URL.revokeObjectURL(currentAttachment.previewUrl);
+        }
+        return null;
+      });
       setEditingMessageId(null);
       setEditingMessageDraft("");
       return;
     }
 
+    if (pendingImageAttachmentKeyRef.current) {
+      deleteUploadedObject({
+        key: pendingImageAttachmentKeyRef.current,
+      }).catch(() => undefined);
+    }
+    pendingImageAttachmentKeyRef.current = null;
+    imageUploadGenerationRef.current += 1;
+    setPendingImageAttachment((currentAttachment) => {
+      if (currentAttachment) {
+        URL.revokeObjectURL(currentAttachment.previewUrl);
+      }
+      return null;
+    });
     setEditingMessageId(null);
     setEditingMessageDraft("");
-  }, [activeThreadKey]);
+  }, [activeThreadKey, deleteUploadedObject]);
 
   useEffect(() => {
     if (
@@ -436,6 +484,22 @@ export function useWorkspaceScreenController() {
       navigate(CHANNELS_PATH, { replace: true });
     }
   }, [activeConversationId, conversations, navigate]);
+
+  useEffect(
+    () => () => {
+      imageUploadGenerationRef.current += 1;
+      if (pendingImageAttachmentKeyRef.current) {
+        deleteUploadedObject({
+          key: pendingImageAttachmentKeyRef.current,
+        }).catch(() => undefined);
+      }
+      const currentAttachment = pendingImageAttachmentRef.current;
+      if (currentAttachment) {
+        URL.revokeObjectURL(currentAttachment.previewUrl);
+      }
+    },
+    [deleteUploadedObject]
+  );
 
   useEffect(() => {
     if (!(activeServerId && workspace)) {
@@ -817,18 +881,111 @@ export function useWorkspaceScreenController() {
     }
   };
 
+  const clearPendingImageAttachment = async (options?: {
+    deleteRemote?: boolean;
+  }) => {
+    imageUploadGenerationRef.current += 1;
+
+    const uploadedKey = pendingImageAttachmentKeyRef.current;
+    pendingImageAttachmentKeyRef.current = null;
+
+    setPendingImageAttachment((currentAttachment) => {
+      if (currentAttachment) {
+        URL.revokeObjectURL(currentAttachment.previewUrl);
+      }
+      return null;
+    });
+
+    if (options?.deleteRemote && uploadedKey) {
+      try {
+        await deleteUploadedObject({ key: uploadedKey });
+      } catch (error) {
+        toast.error(getErrorMessage(error));
+      }
+    }
+  };
+
+  const attachImageToDraft = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Only image files can be uploaded.");
+      return;
+    }
+
+    if (file.size > MAX_MESSAGE_IMAGE_BYTES) {
+      toast.error("Images must be 20 MB or smaller.");
+      return;
+    }
+
+    await clearPendingImageAttachment({ deleteRemote: true });
+
+    const currentGeneration = imageUploadGenerationRef.current;
+    const previewUrl = URL.createObjectURL(file);
+
+    setPendingImageAttachment({
+      fileName: file.name,
+      isUploading: true,
+      previewUrl,
+    });
+
+    try {
+      const key = await uploadMessageImage(file);
+
+      if (imageUploadGenerationRef.current !== currentGeneration) {
+        URL.revokeObjectURL(previewUrl);
+        await deleteUploadedObject({ key });
+        return;
+      }
+
+      pendingImageAttachmentKeyRef.current = key;
+      setPendingImageAttachment({
+        fileName: file.name,
+        isUploading: false,
+        previewUrl,
+      });
+    } catch (error) {
+      URL.revokeObjectURL(previewUrl);
+
+      if (imageUploadGenerationRef.current === currentGeneration) {
+        setPendingImageAttachment(null);
+      }
+
+      toast.error(getErrorMessage(error));
+    }
+  };
+
   const sendActiveMessage = async () => {
     if (!activeThread) {
       return;
     }
 
+    const trimmedDraft = messageDraft.trim();
+    const hasPendingImage = Boolean(pendingImageAttachmentKeyRef.current);
+
+    if (!(trimmedDraft || hasPendingImage)) {
+      return;
+    }
+
+    if (pendingImageAttachment?.isUploading) {
+      toast.error("Wait for the image upload to finish.");
+      return;
+    }
+
     try {
       await sendMessage({
-        body: messageDraft,
+        body: trimmedDraft,
+        imageKey: pendingImageAttachmentKeyRef.current ?? undefined,
         threadId: activeThread.threadId,
         threadType: activeThread.threadType,
       });
       setMessageDraft("");
+      pendingImageAttachmentKeyRef.current = null;
+      imageUploadGenerationRef.current += 1;
+      setPendingImageAttachment((currentAttachment) => {
+        if (currentAttachment) {
+          URL.revokeObjectURL(currentAttachment.previewUrl);
+        }
+        return null;
+      });
     } catch (error) {
       toast.error(getErrorMessage(error));
     }
@@ -898,6 +1055,24 @@ export function useWorkspaceScreenController() {
         setEditingMessageDraft("");
       }
       toast.success("Message deleted.");
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    }
+  };
+
+  const deleteOwnMessageImage = async (messageId: Id<"messages">) => {
+    const message = messages?.find((entry) => entry._id === messageId);
+    if (!(message && current?.user?._id === message.authorId)) {
+      return;
+    }
+
+    if (!(message.imageKey && message.body.trim())) {
+      return;
+    }
+
+    try {
+      await removeMessageImage({ messageId });
+      toast.success("Image attachment deleted.");
     } catch (error) {
       toast.error(getErrorMessage(error));
     }
@@ -1160,16 +1335,19 @@ export function useWorkspaceScreenController() {
     activeServer,
     activeServerId,
     activeVoiceMembers,
+    attachImageToDraft,
     canCreateServerInvites: isServerView && canCreateInvites(workspace),
     channelAccessDraft,
     channelCategoryLabelDraft,
     channelKindDraft,
     channelNameDraft,
+    clearPendingImageAttachment,
     conversations,
     copyServerInviteLink,
     cancelEditingMessage,
     current,
     deleteOwnMessage,
+    deleteOwnMessageImage,
     declineFriendRequest,
     displayNameDraft,
     editLatestOwnMessage,
@@ -1203,6 +1381,7 @@ export function useWorkspaceScreenController() {
     leftSidebarRef,
     messageDraft,
     messages,
+    pendingImageAttachment,
     moveWorkspaceMember,
     navigate,
     navigateToFriendsArea,

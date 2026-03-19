@@ -21,6 +21,7 @@ import {
 } from "@/components/workspace/workspace-screen-context";
 import type { WorkspaceResult } from "@/components/workspace/workspace-types";
 import { getChannelNameText } from "@/lib/channel-name";
+import { getMessagePreview } from "@/lib/message-preview";
 import { getDisplayName, getInitials } from "@/lib/presentation";
 import { getChannelPath, getDmPath } from "@/lib/workspace";
 import { api } from "../../../convex/_generated/api";
@@ -122,7 +123,7 @@ export function WorkspaceCommandPalette() {
       (view.conversations ?? [])
         .map((conversation) => {
           const displayName = getDisplayName(conversation.otherUser);
-          const latestMessage = conversation.latestMessage?.body ?? "";
+          const latestMessage = getMessagePreview(conversation.latestMessage);
           const handle = conversation.otherUser?.handle ?? "";
 
           return {

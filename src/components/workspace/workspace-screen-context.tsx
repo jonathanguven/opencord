@@ -121,14 +121,18 @@ type WorkspaceFriendsContextValue = Pick<
 
 type WorkspaceThreadContextValue = Pick<
   WorkspaceController,
+  | "attachImageToDraft"
   | "cancelEditingMessage"
+  | "clearPendingImageAttachment"
   | "deleteOwnMessage"
+  | "deleteOwnMessageImage"
   | "editLatestOwnMessage"
   | "editingMessageDraft"
   | "editingMessageId"
   | "editOwnMessage"
   | "messages"
   | "messageDraft"
+  | "pendingImageAttachment"
   | "sendActiveMessage"
   | "setEditingMessageDraft"
   | "setMessageDraft"
@@ -191,17 +195,20 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
     activeServer,
     activeServerId,
     activeVoiceMembers,
+    attachImageToDraft,
     canCreateServerInvites,
     channelAccessDraft,
     channelCategoryLabelDraft,
     channelKindDraft,
     channelNameDraft,
+    clearPendingImageAttachment,
     conversations,
     copyServerInviteLink,
     cancelEditingMessage,
     current,
     deleteChannelName,
     deleteOwnMessage,
+    deleteOwnMessageImage,
     declineFriendRequest,
     displayNameDraft,
     editLatestOwnMessage,
@@ -235,6 +242,7 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
     leftSidebarRef,
     messageDraft,
     messages,
+    pendingImageAttachment,
     moveWorkspaceMember,
     navigate,
     navigateToFriendsArea,
@@ -512,28 +520,36 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
 
   const threadValue = useMemo(
     () => ({
+      attachImageToDraft,
       cancelEditingMessage,
+      clearPendingImageAttachment,
       deleteOwnMessage,
+      deleteOwnMessageImage,
       editLatestOwnMessage,
       editingMessageDraft,
       editingMessageId,
       editOwnMessage,
       messages,
       messageDraft,
+      pendingImageAttachment,
       sendActiveMessage,
       setEditingMessageDraft,
       setMessageDraft,
       submitEditingMessage,
     }),
     [
+      attachImageToDraft,
       cancelEditingMessage,
+      clearPendingImageAttachment,
       deleteOwnMessage,
+      deleteOwnMessageImage,
       editLatestOwnMessage,
       editingMessageDraft,
       editingMessageId,
       editOwnMessage,
       messages,
       messageDraft,
+      pendingImageAttachment,
       sendActiveMessage,
       setEditingMessageDraft,
       setMessageDraft,

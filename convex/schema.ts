@@ -140,9 +140,22 @@ export default defineSchema({
     threadId: v.string(),
     authorId: v.id("users"),
     body: v.string(),
+    imageContentType: v.optional(v.string()),
+    imageKey: v.optional(v.string()),
+    imageSize: v.optional(v.number()),
     createdAt: v.number(),
     editedAt: v.optional(v.number()),
   }).index("by_thread", ["threadType", "threadId", "createdAt"]),
+
+  messageUploads: defineTable({
+    authorId: v.id("users"),
+    createdAt: v.number(),
+    key: v.string(),
+    messageId: v.optional(v.id("messages")),
+    usedAt: v.optional(v.number()),
+  })
+    .index("by_authorId", ["authorId"])
+    .index("by_key", ["key"]),
 
   activeVoiceStates: defineTable({
     userId: v.id("users"),
