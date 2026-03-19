@@ -259,7 +259,7 @@ export function WorkspaceSidebar() {
   const isFriendsHomeActive = view.isFriendsView && !view.activeConversationId;
 
   return (
-    <aside className="flex h-full flex-col border-sidebar-border border-r bg-sidebar pb-28 text-sidebar-foreground">
+    <aside className="flex h-full flex-col border-sidebar-border border-r bg-sidebar pb-[60px] text-sidebar-foreground">
       {view.isFriendsView ? (
         <div className="border-sidebar-border border-b p-2.5">
           <WorkspaceCommandPaletteTrigger />
@@ -340,12 +340,8 @@ export function WorkspaceSidebar() {
             </div>
           </ScrollArea>
         ) : (
-          <ScrollArea
-            className="h-full"
-            scrollbarClassName="data-vertical:w-1.75 data-horizontal:h-1"
-            thumbClassName="bg-white/35"
-          >
-            <div className="flex flex-col gap-2 p-2">
+          <div className="flex h-full min-h-0 flex-col">
+            <div className="shrink-0 border-sidebar-border border-b p-2">
               <div className="flex items-center gap-2">
                 <div className="min-w-0 flex-1">
                   <DropdownMenu>
@@ -405,63 +401,69 @@ export function WorkspaceSidebar() {
                   </Tooltip>
                 ) : null}
               </div>
-
-              <div className="border-sidebar-border border-b" />
-
-              <ChannelSection
-                activeChannelId={view.routeChannelId}
-                canManageChannels={view.permissions.manageChannels}
-                channels={view.textChannels}
-                icon={HashIcon}
-                label="Text channels"
-                onAddChannel={() =>
-                  dialogs.openCreateChannel("text", "Text Channels")
-                }
-                onDeleteChannel={dialogs.openDeleteChannel}
-                onRenameChannel={dialogs.openRenameChannel}
-                onReorder={(orderedChannelIds) =>
-                  dialogs.reorderChannelSection("text", orderedChannelIds)
-                }
-                onSelect={(channel) => {
-                  if (!view.activeServerId) {
-                    return;
-                  }
-
-                  navigation.navigate(
-                    getChannelPath(view.activeServerId, channel._id)
-                  );
-                }}
-              />
-
-              <ChannelSection
-                activeChannelId={view.routeChannelId}
-                canManageChannels={view.permissions.manageChannels}
-                channels={view.voiceChannels}
-                counts={view.voicePresence}
-                icon={Volume2Icon}
-                label="Voice channels"
-                onAddChannel={() =>
-                  dialogs.openCreateChannel("voice", "Voice Channels")
-                }
-                onDeleteChannel={dialogs.openDeleteChannel}
-                onRenameChannel={dialogs.openRenameChannel}
-                onReorder={(orderedChannelIds) =>
-                  dialogs.reorderChannelSection("voice", orderedChannelIds)
-                }
-                onSelect={async (channel) => {
-                  if (!view.activeServerId) {
-                    return;
-                  }
-
-                  navigation.navigate(
-                    getChannelPath(view.activeServerId, channel._id)
-                  );
-
-                  await call.joinVoiceChannel(channel);
-                }}
-              />
             </div>
-          </ScrollArea>
+
+            <ScrollArea
+              className="group/server-channel-scroll min-h-0 flex-1"
+              scrollbarClassName="data-vertical:w-1.5 data-horizontal:h-1 opacity-0 transition-opacity group-hover/server-channel-scroll:opacity-100"
+              thumbClassName="bg-white/35"
+            >
+              <div className="flex flex-col gap-2 p-2">
+                <ChannelSection
+                  activeChannelId={view.routeChannelId}
+                  canManageChannels={view.permissions.manageChannels}
+                  channels={view.textChannels}
+                  icon={HashIcon}
+                  label="Text channels"
+                  onAddChannel={() =>
+                    dialogs.openCreateChannel("text", "Text Channels")
+                  }
+                  onDeleteChannel={dialogs.openDeleteChannel}
+                  onRenameChannel={dialogs.openRenameChannel}
+                  onReorder={(orderedChannelIds) =>
+                    dialogs.reorderChannelSection("text", orderedChannelIds)
+                  }
+                  onSelect={(channel) => {
+                    if (!view.activeServerId) {
+                      return;
+                    }
+
+                    navigation.navigate(
+                      getChannelPath(view.activeServerId, channel._id)
+                    );
+                  }}
+                />
+
+                <ChannelSection
+                  activeChannelId={view.routeChannelId}
+                  canManageChannels={view.permissions.manageChannels}
+                  channels={view.voiceChannels}
+                  counts={view.voicePresence}
+                  icon={Volume2Icon}
+                  label="Voice channels"
+                  onAddChannel={() =>
+                    dialogs.openCreateChannel("voice", "Voice Channels")
+                  }
+                  onDeleteChannel={dialogs.openDeleteChannel}
+                  onRenameChannel={dialogs.openRenameChannel}
+                  onReorder={(orderedChannelIds) =>
+                    dialogs.reorderChannelSection("voice", orderedChannelIds)
+                  }
+                  onSelect={async (channel) => {
+                    if (!view.activeServerId) {
+                      return;
+                    }
+
+                    navigation.navigate(
+                      getChannelPath(view.activeServerId, channel._id)
+                    );
+
+                    await call.joinVoiceChannel(channel);
+                  }}
+                />
+              </div>
+            </ScrollArea>
+          </div>
         )}
       </div>
     </aside>
@@ -494,7 +496,14 @@ export function WorkspaceProfileDock() {
 
   return (
     <div className="p-1.5">
-      <div className="flex flex-col gap-1 rounded-lg border border-border/60 bg-accent px-2 py-1.5">
+      <div
+        className={cn(
+          "rounded-md border border-border/60 bg-accent",
+          activeVoiceCall
+            ? "flex flex-col gap-1 px-2 py-1.5"
+            : "flex h-14 items-center px-3"
+        )}
+      >
         {activeVoiceCall ? (
           <>
             <div className="flex items-center gap-1.5">
@@ -550,7 +559,12 @@ export function WorkspaceProfileDock() {
           </>
         ) : null}
 
-        <div className="flex h-11.5 items-center gap-1.5">
+        <div
+          className={cn(
+            "flex w-full min-w-0 items-center gap-1.5",
+            activeVoiceCall && "h-11.5"
+          )}
+        >
           <Avatar className="size-9">
             <AvatarImage src={currentUser?.avatarUrl ?? undefined} />
             <AvatarFallback className="bg-primary/20 text-primary-foreground">
@@ -565,7 +579,7 @@ export function WorkspaceProfileDock() {
               {profileHandle}
             </div>
           </div>
-          <div className="flex items-center gap-0.75 text-muted-foreground">
+          <div className="ml-auto flex items-center gap-0.75 text-muted-foreground">
             <div
               className={cn(
                 "flex items-center overflow-hidden rounded-md",

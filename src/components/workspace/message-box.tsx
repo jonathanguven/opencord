@@ -67,51 +67,54 @@ export function MessageBox({
   });
 
   return (
-    <div className="flex flex-col gap-2">
-      <input
-        accept="image/*"
-        className="sr-only"
-        onChange={(event) => {
-          const nextFile = event.target.files?.[0];
-          if (!nextFile) {
-            return;
-          }
+    <div className="shrink-0 px-1.5 pb-1.5">
+      <div className="flex flex-col gap-2">
+        <input
+          accept="image/*"
+          className="sr-only"
+          onChange={(event) => {
+            const nextFile = event.target.files?.[0];
+            if (!nextFile) {
+              return;
+            }
 
-          Promise.resolve(onUploadImage(nextFile)).catch(() => undefined);
-          event.target.value = "";
-        }}
-        ref={fileInputRef}
-        type="file"
-      />
-      {attachment ? (
-        <div className="inline-flex max-w-full items-center gap-3 self-start rounded-2xl border border-border/70 bg-muted/30 p-2.5">
-          <img
-            alt={attachment.fileName}
-            className="size-14 rounded-xl object-cover"
-            height={56}
-            src={attachment.previewUrl}
-            width={56}
-          />
-          <div className="min-w-0">
-            <div className="truncate font-medium text-sm">
-              {attachment.fileName}
+            Promise.resolve(onUploadImage(nextFile)).catch(() => undefined);
+            event.target.value = "";
+          }}
+          ref={fileInputRef}
+          type="file"
+        />
+        {attachment ? (
+          <div className="inline-flex max-w-full items-center gap-3 self-start rounded-xl border border-border/70 bg-muted/30 p-2.5">
+            <img
+              alt={attachment.fileName}
+              className="size-14 rounded-xl object-cover"
+              height={56}
+              src={attachment.previewUrl}
+              width={56}
+            />
+            <div className="min-w-0">
+              <div className="truncate font-medium text-sm">
+                {attachment.fileName}
+              </div>
+              <div className="text-muted-foreground text-xs">
+                {attachment.isUploading
+                  ? "Uploading image..."
+                  : "Ready to send"}
+              </div>
             </div>
-            <div className="text-muted-foreground text-xs">
-              {attachment.isUploading ? "Uploading image..." : "Ready to send"}
-            </div>
+            <Button
+              aria-label="Remove image attachment"
+              onClick={onRemoveAttachment}
+              size="icon-sm"
+              type="button"
+              variant="ghost"
+            >
+              <XIcon />
+            </Button>
           </div>
-          <Button
-            aria-label="Remove image attachment"
-            onClick={onRemoveAttachment}
-            size="icon-sm"
-            type="button"
-            variant="ghost"
-          >
-            <XIcon />
-          </Button>
-        </div>
-      ) : null}
-      <InputGroup className="h-14 min-h-14 items-center overflow-hidden rounded-md border-border/60 has-[[data-slot=input-group-control]:focus-visible]:border-border/80 has-[[data-slot=input-group-control]:focus-visible]:ring-1 has-[[data-slot=input-group-control]:focus-visible]:ring-ring/20">
+        ) : null}
+        <InputGroup className="h-14 min-h-14 items-center overflow-hidden rounded-md border-border/60 has-[[data-slot=input-group-control]:focus-visible]:border-border/80 has-[[data-slot=input-group-control]:focus-visible]:ring-1 has-[[data-slot=input-group-control]:focus-visible]:ring-ring/20">
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
@@ -183,7 +186,8 @@ export function MessageBox({
             rows={1}
             value={draft}
           />
-      </InputGroup>
+        </InputGroup>
+      </div>
     </div>
   );
 }
