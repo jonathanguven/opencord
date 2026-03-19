@@ -31,14 +31,21 @@ export function useLocalStorageState<Value>(
     }
   });
 
-  const setStoredValue = (nextValue: Value) => {
-    setValue(nextValue);
+  const setStoredValue = (
+    nextValue: Value | ((currentValue: Value) => Value)
+  ) => {
+    const resolvedValue =
+      typeof nextValue === "function"
+        ? (nextValue as (currentValue: Value) => Value)(value)
+        : nextValue;
+
+    setValue(resolvedValue);
 
     if (typeof window === "undefined") {
       return;
     }
 
-    window.localStorage.setItem(key, serialize(nextValue));
+    window.localStorage.setItem(key, serialize(resolvedValue));
   };
 
   return [value, setStoredValue] as const;
