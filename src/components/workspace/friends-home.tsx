@@ -40,7 +40,7 @@ import type {
 import { getDisplayName, getInitials } from "@/lib/presentation";
 
 const friendsTabClassName =
-  "inline-flex items-center justify-center rounded-md px-3 py-2 font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground data-[active]:bg-secondary data-[active]:text-secondary-foreground";
+  "inline-flex cursor-pointer items-center justify-center rounded-md px-3 py-2 font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground data-[active]:bg-secondary data-[active]:text-secondary-foreground disabled:cursor-not-allowed aria-disabled:cursor-not-allowed";
 
 const searchInputClassName =
   "h-10 bg-input/30 pr-4 pl-11 shadow-none placeholder:text-muted-foreground dark:bg-input/30";
@@ -299,6 +299,7 @@ export function FriendsHome() {
                   value={friends.friendHandleDraft}
                 />
                 <Button
+                  className="disabled:pointer-events-auto disabled:cursor-not-allowed"
                   disabled={!friends.friendHandleDraft.trim()}
                   type="submit"
                   variant="friend"
