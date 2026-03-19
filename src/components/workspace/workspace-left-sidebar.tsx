@@ -13,6 +13,7 @@ import {
   LogOutIcon,
   MessageSquareIcon,
   MicIcon,
+  MicOffIcon,
   PencilIcon,
   PlusIcon,
   Settings2Icon,
@@ -86,7 +87,6 @@ const listItemClassName =
   "w-full justify-start gap-2 rounded-lg px-2 py-1.5 text-left";
 
 const VOICE_TIMER_INTERVAL_MS = 1000;
-const MAX_VISIBLE_VOICE_AVATARS = 4;
 
 function getDroppableBindings(droppableProvided: DroppableProvided) {
   "use no memo";
@@ -830,8 +830,8 @@ function ChannelRow({
         listItemClassName,
         "flex-col items-stretch gap-1",
         active
-          ? "bg-sidebar-accent text-sidebar-accent-foreground"
-          : "text-muted-foreground hover:bg-accent hover:text-foreground",
+          ? "text-sidebar-accent-foreground"
+          : "text-muted-foreground hover:text-foreground",
         canManageChannels && "cursor-grab active:cursor-grabbing",
         isDragging && "border border-sidebar-border bg-sidebar shadow-lg"
       )}
@@ -853,7 +853,14 @@ function ChannelRow({
       type="button"
       variant="plain"
     >
-      <div className="flex items-center gap-2.5">
+      <div
+        className={cn(
+          "flex items-center gap-2.5 rounded-md px-2 py-1",
+          active
+            ? "bg-sidebar-accent text-sidebar-accent-foreground"
+            : "hover:bg-accent/90"
+        )}
+      >
         <Icon
           className={cn(
             "size-4 shrink-0",
@@ -908,27 +915,34 @@ function ChannelRow({
 }
 
 function VoiceParticipantStrip({ members }: { members: VoicePresenceItem[] }) {
-  const visibleMembers = members.slice(0, MAX_VISIBLE_VOICE_AVATARS);
-  const overflowCount = members.length - visibleMembers.length;
-
   return (
-    <div className="flex items-center gap-1.5 pl-6">
-      {visibleMembers.map((member) => (
-        <Avatar
-          className="-ml-1 size-6 border-2 border-sidebar first:ml-0"
-          key={member._id}
-        >
-          <AvatarImage src={member.user?.avatarUrl ?? undefined} />
-          <AvatarFallback className="bg-primary/20 text-[0.55rem] text-primary-foreground">
-            {getInitials(getDisplayName(member.user))}
-          </AvatarFallback>
-        </Avatar>
-      ))}
-      {overflowCount > 0 ? (
-        <span className="rounded-full bg-background/70 px-1.5 py-0.5 font-bold text-[0.65rem] text-foreground">
-          +{overflowCount}
-        </span>
-      ) : null}
+    <div className="flex flex-col gap-1 pl-6">
+      {members.map((member) => {
+        const displayName = getDisplayName(member.user);
+
+        return (
+          <div
+            className="flex items-center gap-2 rounded-md px-1.5 py-1 text-left text-[0.82rem] text-sidebar-foreground/90 hover:bg-accent/40"
+            key={member._id}
+          >
+            <Avatar className="size-6 shrink-0">
+              <AvatarImage src={member.user?.avatarUrl ?? undefined} />
+              <AvatarFallback className="bg-primary/20 text-[0.55rem] text-primary-foreground">
+                {getInitials(displayName)}
+              </AvatarFallback>
+            </Avatar>
+            <span className="min-w-0 flex-1 truncate font-medium leading-none">
+              {displayName}
+            </span>
+            {member.muted ? (
+              <MicOffIcon
+                aria-label={`${displayName} is muted`}
+                className="size-3.5 shrink-0 text-muted-foreground"
+              />
+            ) : null}
+          </div>
+        );
+      })}
     </div>
   );
 }
