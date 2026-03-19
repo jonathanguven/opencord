@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
 import {
   ResizableHandle,
@@ -17,6 +17,7 @@ import {
 } from "@/components/workspace/workspace-dialogs";
 import { WorkspaceHeader } from "@/components/workspace/workspace-header";
 import {
+  WorkspaceProfileDock,
   WorkspaceRail,
   WorkspaceSidebar,
 } from "@/components/workspace/workspace-left-sidebar";
@@ -42,6 +43,7 @@ export function WorkspaceScreen() {
 }
 
 function WorkspaceScreenLayout() {
+  const railWidth = 76;
   const view = useWorkspaceView();
   const ui = useWorkspaceUi();
   const dialogs = useWorkspaceDialogs();
@@ -53,12 +55,14 @@ function WorkspaceScreenLayout() {
       deserialize: (storedValue) => Number(storedValue),
     }
   );
+  const [liveLeftSidebarWidth, setLiveLeftSidebarWidth] =
+    useState(leftSidebarWidth);
   const leftSidebarWidthRef = useRef(leftSidebarWidth);
   const showWorkspaceHeader =
     !view.isFriendsView || Boolean(view.activeConversationId);
 
   return (
-    <div className="flex min-h-svh bg-[#313338] text-[#f2f3f5]">
+    <div className="relative flex min-h-svh bg-[#313338] text-[#f2f3f5]">
       <OnboardingDialog
         displayNameDraft={dialogs.displayNameDraft}
         handleDraft={dialogs.handleDraft}
@@ -147,6 +151,7 @@ function WorkspaceScreenLayout() {
               minSize={200}
               onResize={(panelSize) => {
                 leftSidebarWidthRef.current = panelSize.inPixels;
+                setLiveLeftSidebarWidth(panelSize.inPixels);
               }}
             >
               <WorkspaceSidebar />
@@ -183,6 +188,15 @@ function WorkspaceScreenLayout() {
               </div>
             </ResizablePanel>
           </ResizablePanelGroup>
+        </div>
+      </div>
+
+      <div
+        className="pointer-events-none absolute bottom-0 left-0 z-30"
+        style={{ width: `${railWidth + liveLeftSidebarWidth}px` }}
+      >
+        <div className="pointer-events-auto">
+          <WorkspaceProfileDock />
         </div>
       </div>
     </div>

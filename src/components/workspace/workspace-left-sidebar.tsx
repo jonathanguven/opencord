@@ -234,8 +234,6 @@ export function WorkspaceRail() {
           <TooltipContent side="right">Create server</TooltipContent>
         </Tooltip>
       </div>
-
-      <div className="size-12 rounded-[1.35rem] border border-sidebar-border bg-sidebar" />
     </div>
   );
 }
@@ -248,13 +246,8 @@ export function WorkspaceSidebar() {
   const navigation = useWorkspaceNavigation();
   const isFriendsHomeActive = view.isFriendsView && !view.activeConversationId;
 
-  const currentUser = view.current?.user;
-  const sidebarProfileName = getDisplayName(currentUser);
-  const sidebarProfileHandle = `@${currentUser?.handle ?? "finish-setup"}`;
-  const directMessageCount = view.conversations?.length ?? 0;
-
   return (
-    <aside className="flex h-full flex-col border-sidebar-border border-r bg-sidebar text-sidebar-foreground">
+    <aside className="flex h-full flex-col border-sidebar-border border-r bg-sidebar pb-28 text-sidebar-foreground">
       {view.isFriendsView ? (
         <div className="border-sidebar-border border-b p-2.5">
           <WorkspaceCommandPaletteTrigger />
@@ -451,78 +444,84 @@ export function WorkspaceSidebar() {
           </ScrollArea>
         )}
       </div>
+    </aside>
+  );
+}
 
-      <div className="border-sidebar-border border-t p-3">
-        <div className="flex items-center gap-3 rounded-2xl bg-accent px-3 py-3 shadow-[inset_0_1px_0_rgb(255_255_255/0.05)]">
-          <Avatar className="size-11">
-            <AvatarImage src={currentUser?.avatarUrl ?? undefined} />
-            <AvatarFallback className="bg-primary/20 text-primary-foreground">
-              {getInitials(sidebarProfileName)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="min-w-0 flex-1">
-            <div className="truncate font-bold text-foreground text-lg">
-              {sidebarProfileName}
-            </div>
-            <div className="truncate text-muted-foreground text-sm">
-              {sidebarProfileHandle}
-            </div>
-            <div className="truncate text-muted-foreground/90 text-sm">
-              {view.isFriendsView
-                ? `${directMessageCount} open DMs`
-                : (view.activeServer?.name ?? "OpenCord")}
-            </div>
+export function WorkspaceProfileDock() {
+  const view = useWorkspaceView();
+  const ui = useWorkspaceUi();
+  const navigation = useWorkspaceNavigation();
+  const currentUser = view.current?.user;
+  const profileName = getDisplayName(currentUser);
+  const profileHandle = `@${currentUser?.handle ?? "finish-setup"}`;
+
+  return (
+    <div className="p-1.5">
+      <div className="flex items-center gap-1 rounded-lg bg-accent px-3 py-2.5 shadow-[inset_0_1px_0_rgb(255_255_255/0.05),0_14px_32px_rgb(0_0_0/0.2)]">
+        <Avatar className="size-10">
+          <AvatarImage src={currentUser?.avatarUrl ?? undefined} />
+          <AvatarFallback className="bg-primary/20 text-primary-foreground">
+            {getInitials(profileName)}
+          </AvatarFallback>
+        </Avatar>
+        <div className="min-w-0 flex-1">
+          <div className="truncate font-bold text-[0.95rem] text-foreground leading-tight">
+            {profileName}
           </div>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <span className="rounded-lg p-1.5 transition-colors hover:bg-background/40 hover:text-foreground">
-              <MicIcon className="size-5" />
-            </span>
-            <span className="rounded-lg p-1.5 transition-colors hover:bg-background/40 hover:text-foreground">
-              <HeadphonesIcon className="size-5" />
-            </span>
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button
-                    className="rounded-lg p-1.5 text-muted-foreground hover:bg-background/40 hover:text-foreground"
-                    size="icon-sm"
-                    variant="ghost"
-                  />
-                }
-              >
-                <Settings2Icon className="size-5" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" side="top">
-                <DropdownMenuLabel>
-                  {sidebarProfileName}
-                  <div className="font-normal text-muted-foreground text-xs">
-                    {sidebarProfileHandle}
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuGroup>
-                  <DropdownMenuItem onClick={navigation.showAddFriendTab}>
-                    <UserPlusIcon />
-                    Add friend
-                  </DropdownMenuItem>
-                  {view.canCreateServerInvites ? (
-                    <DropdownMenuItem onClick={() => ui.setIsInviteOpen(true)}>
-                      <InviteToServerIcon className="size-4" />
-                      Invite to Server
-                    </DropdownMenuItem>
-                  ) : null}
-                  <DropdownMenuItem onClick={navigation.handleSignOut}>
-                    <LogOutIcon />
-                    Sign out
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <ChevronDownIcon className="size-4 text-muted-foreground" />
+          <div className="truncate text-[0.75rem] text-muted-foreground leading-tight">
+            {profileHandle}
           </div>
         </div>
+        <div className="flex items-center gap-1.5 text-muted-foreground">
+          <span className="rounded-md p-1.25 transition-colors hover:bg-background/40 hover:text-foreground">
+            <MicIcon className="size-4.5" />
+          </span>
+          <span className="rounded-md p-1.25 transition-colors hover:bg-background/40 hover:text-foreground">
+            <HeadphonesIcon className="size-4.5" />
+          </span>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  className="rounded-md p-1.25 text-muted-foreground hover:bg-background/40 hover:text-foreground"
+                  size="icon-sm"
+                  variant="ghost"
+                />
+              }
+            >
+              <Settings2Icon className="size-4.5" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" side="top">
+              <DropdownMenuLabel>
+                {profileName}
+                <div className="font-normal text-muted-foreground text-xs">
+                  {profileHandle}
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={navigation.showAddFriendTab}>
+                  <UserPlusIcon />
+                  Add friend
+                </DropdownMenuItem>
+                {view.canCreateServerInvites ? (
+                  <DropdownMenuItem onClick={() => ui.setIsInviteOpen(true)}>
+                    <InviteToServerIcon className="size-4" />
+                    Invite to Server
+                  </DropdownMenuItem>
+                ) : null}
+                <DropdownMenuItem onClick={navigation.handleSignOut}>
+                  <LogOutIcon />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <ChevronDownIcon className="size-3.5 text-muted-foreground" />
+        </div>
       </div>
-    </aside>
+    </div>
   );
 }
 
