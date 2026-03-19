@@ -699,6 +699,13 @@ export function useWorkspaceScreenController() {
       return;
     }
 
+    const handleError = validateHandle(handle);
+
+    if (handleError) {
+      toast.error(handleError);
+      return;
+    }
+
     try {
       await sendFriendRequest({ handle });
       setFriendHandleDraft("");
