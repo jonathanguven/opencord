@@ -111,93 +111,7 @@ export function MessageBox({
           </Button>
         </div>
       ) : null}
-      <InputGroup className="min-h-0 items-end overflow-hidden rounded-2xl">
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <Button
-                aria-label="Add attachment"
-                className="mb-1 ml-1 size-10 rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground"
-                size="icon"
-                type="button"
-                variant="plain"
-              />
-            }
-          >
-            <PlusIcon />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="start"
-            className="w-64 rounded-2xl border border-border/70 bg-popover p-2"
-            side="top"
-            sideOffset={8}
-          >
-            <DropdownMenuGroup>
-              <DropdownMenuItem
-                className="min-h-11 gap-3 rounded-xl px-3 py-2 text-base"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <FileUpIcon />
-                Upload a File
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <InputGroupTextarea
-          className="field-sizing-fixed min-h-0 overflow-y-hidden px-3 py-3 leading-6"
-          maxLength={4000}
-          onChange={(event) => onChange(event.target.value)}
-          onKeyDown={(event) => {
-            if (
-              event.key === "ArrowUp" &&
-              !event.shiftKey &&
-              !draft.trim() &&
-              event.currentTarget.selectionStart === 0 &&
-              event.currentTarget.selectionEnd === 0
-            ) {
-              if (onEditLatestMessage()) {
-                event.preventDefault();
-              }
-              return;
-            }
-
-            Promise.resolve(onUploadImage(nextFile)).catch(() => undefined);
-            event.target.value = "";
-          }}
-          ref={fileInputRef}
-          type="file"
-        />
-        {attachment ? (
-          <div className="inline-flex max-w-full items-center gap-3 self-start rounded-xl border border-border/70 bg-muted/30 p-2.5">
-            <img
-              alt={attachment.fileName}
-              className="size-14 rounded-xl object-cover"
-              height={56}
-              src={attachment.previewUrl}
-              width={56}
-            />
-            <div className="min-w-0">
-              <div className="truncate font-medium text-sm">
-                {attachment.fileName}
-              </div>
-              <div className="text-muted-foreground text-xs">
-                {attachment.isUploading
-                  ? "Uploading image..."
-                  : "Ready to send"}
-              </div>
-            </div>
-            <Button
-              aria-label="Remove image attachment"
-              onClick={onRemoveAttachment}
-              size="icon-sm"
-              type="button"
-              variant="ghost"
-            >
-              <XIcon />
-            </Button>
-          </div>
-        ) : null}
-        <InputGroup className="h-14 min-h-14 items-center overflow-hidden rounded-md border-border/60 has-[[data-slot=input-group-control]:focus-visible]:border-border/80 has-[[data-slot=input-group-control]:focus-visible]:ring-1 has-[[data-slot=input-group-control]:focus-visible]:ring-ring/20">
+      <InputGroup className="h-14 min-h-14 items-center overflow-hidden rounded-md border-border/60 has-[[data-slot=input-group-control]:focus-visible]:border-border/80 has-[[data-slot=input-group-control]:focus-visible]:ring-1 has-[[data-slot=input-group-control]:focus-visible]:ring-ring/20">
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
@@ -269,8 +183,7 @@ export function MessageBox({
             rows={1}
             value={draft}
           />
-        </InputGroup>
-      </div>
+      </InputGroup>
     </div>
   );
 }

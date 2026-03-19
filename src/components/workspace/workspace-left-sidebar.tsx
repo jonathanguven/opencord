@@ -24,7 +24,6 @@ import {
   UsersIcon,
   VideoIcon,
   Volume2Icon,
-  VolumeXIcon,
 } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 
@@ -92,8 +91,8 @@ const railButtonClassName =
 const listItemClassName =
   "w-full justify-start gap-2 rounded-lg px-2 py-1.5 text-left";
 
-const VOICE_TIMER_INTERVAL_MS = 1000;
 const DEFAULT_AUDIO_DEVICE_ID = "default";
+const VOICE_TIMER_INTERVAL_MS = 1000;
 
 interface AudioDeviceOption {
   deviceId: string;
@@ -480,7 +479,6 @@ export function WorkspaceProfileDock() {
   const profileHandle = `@${currentUser?.handle ?? "finish-setup"}`;
   const activeVoiceCall =
     call.activeCall?.kind === "voice" ? call.activeCall : null;
-  const showSpeakingRing = Boolean(activeVoiceCall && call.isSelfSpeaking);
   const [selectedInputId, setSelectedInputId] = useState(
     DEFAULT_AUDIO_DEVICE_ID
   );
@@ -496,67 +494,186 @@ export function WorkspaceProfileDock() {
 
   return (
     <div className="p-1.5">
-      <div className="flex h-14 items-center gap-1 rounded-md border border-border/60 bg-accent px-3">
-        <Avatar className="size-10">
-          <AvatarImage src={currentUser?.avatarUrl ?? undefined} />
-          <AvatarFallback className="bg-primary/20 text-primary-foreground">
-            {getInitials(profileName)}
-          </AvatarFallback>
-        </Avatar>
-        <div className="min-w-0 flex-1">
-          <div className="truncate font-bold text-[0.95rem] text-foreground leading-tight">
-            {profileName}
-          </div>
-          <div className="truncate text-[0.75rem] text-muted-foreground leading-tight">
-            {profileHandle}
-          </div>
-        </div>
-        <div className="flex items-center gap-1.5 text-muted-foreground">
-          <span className="rounded-md p-1.25 transition-colors hover:bg-background/40 hover:text-foreground">
-            <MicIcon className="size-4.5" />
-          </span>
-          <span className="rounded-md p-1.25 transition-colors hover:bg-background/40 hover:text-foreground">
-            <HeadphonesIcon className="size-4.5" />
-          </span>
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button
-                  className="rounded-md p-1.25 text-muted-foreground hover:bg-background/40 hover:text-foreground"
-                  size="icon-sm"
-                  variant="ghost"
-                />
-              }
-            >
-              <Settings2Icon className="size-4.5" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" side="top">
-              <DropdownMenuLabel>
-                {profileName}
-                <div className="font-normal text-muted-foreground text-xs">
-                  {profileHandle}
+      <div className="flex flex-col gap-1 rounded-lg border border-border/60 bg-accent px-2 py-1.5">
+        {activeVoiceCall ? (
+          <>
+            <div className="flex items-center gap-1.5">
+              <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-emerald-500/12 text-emerald-400 shadow-[inset_0_1px_0_rgb(255_255_255/0.06)]">
+                  <Volume2Icon className="size-3.5" />
                 </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuGroup>
-                <DropdownMenuItem onClick={navigation.showAddFriendTab}>
-                  <UserPlusIcon />
-                  Add friend
-                </DropdownMenuItem>
-                {view.canCreateServerInvites ? (
-                  <DropdownMenuItem onClick={() => ui.setIsInviteOpen(true)}>
-                    <InviteToServerIcon className="size-4" />
-                    Invite to Server
+                <div className="min-w-0">
+                  <div className="truncate font-bold text-[0.82rem] text-emerald-400 leading-tight">
+                    Voice Connected
+                  </div>
+                  <div className="truncate font-semibold text-[0.72rem] text-foreground/90 leading-tight">
+                    {activeVoiceCall.label}
+                  </div>
+                </div>
+              </div>
+              <Button
+                aria-label={
+                  call.isCallConnecting ? "Cancel call" : "Leave call"
+                }
+                className="rounded-md"
+                onClick={call.leaveActiveCall}
+                size="icon-sm"
+                type="button"
+                variant="destructive"
+              >
+                <PhoneOffIcon className="size-3.5" />
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-1 mb-2">
+              <Button
+                className="h-7 justify-center gap-1 rounded-md bg-white/8 px-1.5 text-[0.68rem] text-foreground/85 hover:bg-white/14"
+                onClick={call.triggerCamera}
+                type="button"
+                variant="plain"
+              >
+                <VideoIcon className="size-3" />
+                Camera
+              </Button>
+              <Button
+                className="h-7 justify-center gap-1 rounded-md bg-white/8 px-1.5 text-[0.68rem] text-foreground/85 hover:bg-white/14"
+                onClick={call.triggerShareScreen}
+                type="button"
+                variant="plain"
+              >
+                <MonitorUpIcon className="size-3" />
+                Share Screen
+              </Button>
+            </div>
+
+            <div className="h-px bg-white/6" />
+          </>
+        ) : null}
+
+        <div className="flex h-11.5 items-center gap-1.5">
+          <Avatar className="size-9">
+            <AvatarImage src={currentUser?.avatarUrl ?? undefined} />
+            <AvatarFallback className="bg-primary/20 text-primary-foreground">
+              {getInitials(profileName)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0 flex-1">
+            <div className="truncate font-bold text-[0.88rem] text-foreground leading-tight">
+              {profileName}
+            </div>
+            <div className="truncate text-[0.7rem] text-muted-foreground leading-tight">
+              {profileHandle}
+            </div>
+          </div>
+          <div className="flex items-center gap-0.75 text-muted-foreground">
+            <div
+              className={cn(
+                "flex items-center overflow-hidden rounded-md",
+                activeVoiceCall?.muted
+                  ? "bg-destructive/20 text-destructive"
+                  : "bg-background/20 hover:bg-background/40"
+              )}
+            >
+              <Button
+                aria-label={muteButtonLabel}
+                className={cn(
+                  "h-6.5 w-7.5 rounded-none rounded-l-md p-0 hover:bg-transparent",
+                  activeVoiceCall?.muted
+                    ? "text-destructive hover:text-destructive"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                disabled={!activeVoiceCall}
+                onClick={call.toggleMute}
+                size="none"
+                type="button"
+                variant="ghost"
+              >
+                {activeVoiceCall?.muted ? (
+                  <MicOffIcon className="size-4" />
+                ) : (
+                  <MicIcon className="size-4" />
+                )}
+              </Button>
+              <AudioDeviceMenu
+                devices={inputDevices}
+                isActive={Boolean(activeVoiceCall?.muted)}
+                label="Input"
+                onValueChange={setSelectedInputId}
+                selectedDeviceId={selectedInputId}
+              />
+            </div>
+            <div
+              className={cn(
+                "flex items-center overflow-hidden rounded-md",
+                activeVoiceCall?.deafened
+                  ? "bg-destructive/20 text-destructive"
+                  : "bg-background/20 hover:bg-background/40"
+              )}
+            >
+              <Button
+                aria-label={deafenButtonLabel}
+                className={cn(
+                  "h-6.5 w-7.5 rounded-none rounded-l-md p-0 hover:bg-transparent",
+                  activeVoiceCall?.deafened
+                    ? "text-destructive hover:text-destructive"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                disabled={!activeVoiceCall}
+                onClick={call.toggleDeafen}
+                size="none"
+                type="button"
+                variant="ghost"
+              >
+                <HeadphonesIcon className="size-4" />
+              </Button>
+              <AudioDeviceMenu
+                devices={outputDevices}
+                isActive={Boolean(activeVoiceCall?.deafened)}
+                label="Output"
+                onValueChange={setSelectedOutputId}
+                selectedDeviceId={selectedOutputId}
+              />
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    aria-label="User settings"
+                    className="rounded-md p-1 text-muted-foreground hover:bg-background/40 hover:text-foreground"
+                    size="icon-sm"
+                    variant="ghost"
+                  />
+                }
+              >
+                <SettingsIcon className="size-4 transition-transform duration-200 group-hover/button:rotate-90" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" side="top">
+                <DropdownMenuLabel>
+                  {profileName}
+                  <div className="font-normal text-muted-foreground text-xs">
+                    {profileHandle}
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem onClick={navigation.showAddFriendTab}>
+                    <UserPlusIcon />
+                    Add friend
                   </DropdownMenuItem>
-                ) : null}
-                <DropdownMenuItem onClick={navigation.handleSignOut}>
-                  <LogOutIcon />
-                  Sign out
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <ChevronDownIcon className="size-3.5 text-muted-foreground" />
+                  {view.canCreateServerInvites ? (
+                    <DropdownMenuItem onClick={() => ui.setIsInviteOpen(true)}>
+                      <InviteToServerIcon className="size-4" />
+                      Invite to Server
+                    </DropdownMenuItem>
+                  ) : null}
+                  <DropdownMenuItem onClick={navigation.handleSignOut}>
+                    <LogOutIcon />
+                    Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
     </div>
@@ -585,7 +702,7 @@ function AudioDeviceMenu({
           <Button
             aria-label={`${label} options`}
             className={cn(
-              "h-7 w-4 rounded-none rounded-r-md p-0",
+              "h-7 w-4 rounded-none rounded-r-md p-0 hover:bg-transparent",
               isActive
                 ? "text-destructive hover:text-destructive"
                 : "text-muted-foreground hover:text-foreground"
@@ -1084,6 +1201,19 @@ function useTicker(enabled: boolean) {
   return now;
 }
 
+function formatVoiceDuration(durationMs: number) {
+  const totalSeconds = Math.max(0, Math.floor(durationMs / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  }
+
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
 function useAudioDeviceOptions() {
   const [devices, setDevices] = useState<AudioDeviceOption[]>([]);
 
@@ -1124,19 +1254,6 @@ function useAudioDeviceOptions() {
     inputDevices: devices.filter((device) => device.kind === "audioinput"),
     outputDevices: devices.filter((device) => device.kind === "audiooutput"),
   };
-}
-
-function formatVoiceDuration(durationMs: number) {
-  const totalSeconds = Math.max(0, Math.floor(durationMs / 1000));
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-
-  if (hours > 0) {
-    return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-  }
-
-  return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
 function InviteToServerIcon({ className }: { className?: string }) {
