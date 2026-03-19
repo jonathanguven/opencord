@@ -515,17 +515,17 @@ export function WorkspaceProfileDock() {
                 aria-label={
                   call.isCallConnecting ? "Cancel call" : "Leave call"
                 }
-                className="rounded-md"
+                className="rounded-md bg-background/20 text-muted-foreground hover:bg-destructive/20 hover:text-destructive"
                 onClick={call.leaveActiveCall}
                 size="icon-sm"
                 type="button"
-                variant="destructive"
+                variant="plain"
               >
                 <PhoneOffIcon className="size-3.5" />
               </Button>
             </div>
 
-            <div className="grid grid-cols-2 gap-1 mb-2">
+            <div className="mb-2 grid grid-cols-2 gap-1">
               <Button
                 className="h-7 justify-center gap-1 rounded-md bg-white/8 px-1.5 text-[0.68rem] text-foreground/85 hover:bg-white/14"
                 onClick={call.triggerCamera}
