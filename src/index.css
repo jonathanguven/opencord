@@ -138,3 +138,65 @@
     @apply font-sans;
   }
 }
+
+@layer components {
+  .message-markdown {
+    @apply break-words;
+  }
+
+  .message-markdown > * + * {
+    @apply mt-2;
+  }
+
+  .message-markdown h1 {
+    @apply font-semibold text-base;
+  }
+
+  .message-markdown h2 {
+    @apply font-semibold text-[0.9375rem];
+  }
+
+  .message-markdown h3,
+  .message-markdown h4,
+  .message-markdown h5,
+  .message-markdown h6 {
+    @apply font-semibold text-sm;
+  }
+
+  .message-markdown ul {
+    @apply list-disc pl-5;
+  }
+
+  .message-markdown ol {
+    @apply list-decimal pl-5;
+  }
+
+  .message-markdown li + li {
+    @apply mt-1;
+  }
+
+  .message-markdown blockquote {
+    @apply border-l-2 border-border/80 pl-3 text-muted-foreground;
+  }
+
+  .message-markdown hr {
+    @apply my-3 border-border/70;
+  }
+
+  .message-markdown table {
+    @apply w-full border-collapse overflow-hidden rounded-lg border border-border/70 text-left;
+  }
+
+  .message-markdown thead {
+    @apply bg-muted/40;
+  }
+
+  .message-markdown th,
+  .message-markdown td {
+    @apply border border-border/70 px-2 py-1.5 align-top;
+  }
+
+  .message-markdown img {
+    @apply max-h-80 max-w-full rounded-lg border border-border/60 bg-muted/20 object-cover;
+  }
+}

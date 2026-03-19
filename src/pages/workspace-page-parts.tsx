@@ -17,6 +17,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { MessageMarkdown } from "@/components/workspace/message-markdown";
 import type { MessageListItem } from "@/components/workspace/workspace-types";
 import { getDisplayName, getInitials } from "@/lib/presentation";
 
@@ -216,14 +217,14 @@ export function MessageFeed({
               ) : (
                 <div className="mt-1 flex flex-col gap-2">
                   {message.body ? (
-                    <p className="whitespace-pre-wrap text-foreground/95 text-sm leading-5">
-                      <span>{message.body}</span>
+                    <div>
+                      <MessageMarkdown body={message.body} />
                       {message.editedAt ? (
                         <span className="ml-1.5 inline-block text-[11px] text-muted-foreground/80">
                           (edited)
                         </span>
                       ) : null}
-                    </p>
+                    </div>
                   ) : null}
                   {message.imageUrl ? (
                     <div className="group/image relative w-fit max-w-full">
