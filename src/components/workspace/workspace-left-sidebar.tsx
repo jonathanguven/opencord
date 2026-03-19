@@ -577,7 +577,7 @@ export function WorkspaceProfileDock() {
               <Button
                 aria-label={muteButtonLabel}
                 className={cn(
-                  "h-6.5 w-7.5 rounded-none rounded-l-md p-0 hover:bg-transparent",
+                  "h-7 w-8 rounded-none rounded-l-md p-0 hover:bg-transparent",
                   activeVoiceCall?.muted
                     ? "text-destructive hover:text-destructive"
                     : "text-muted-foreground hover:text-foreground"
@@ -613,7 +613,7 @@ export function WorkspaceProfileDock() {
               <Button
                 aria-label={deafenButtonLabel}
                 className={cn(
-                  "h-6.5 w-7.5 rounded-none rounded-l-md p-0 hover:bg-transparent",
+                  "h-7 w-8 rounded-none rounded-l-md p-0 hover:bg-transparent",
                   activeVoiceCall?.deafened
                     ? "text-destructive hover:text-destructive"
                     : "text-muted-foreground hover:text-foreground"
@@ -639,13 +639,13 @@ export function WorkspaceProfileDock() {
                 render={
                   <Button
                     aria-label="User settings"
-                    className="rounded-md p-1 text-muted-foreground hover:bg-background/40 hover:text-foreground"
+                    className="rounded-md p-1.15 text-muted-foreground hover:bg-background/40 hover:text-foreground"
                     size="icon-sm"
                     variant="ghost"
                   />
                 }
               >
-                <SettingsIcon className="size-4 transition-transform duration-200 group-hover/button:rotate-90" />
+                <SettingsIcon className="size-[1.05rem] transition-transform duration-200 group-hover/button:rotate-90" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" side="top">
                 <DropdownMenuLabel>
@@ -702,7 +702,7 @@ function AudioDeviceMenu({
           <Button
             aria-label={`${label} options`}
             className={cn(
-              "h-7 w-4 rounded-none rounded-r-md p-0 hover:bg-transparent",
+              "h-7 w-4.5 rounded-none rounded-r-md p-0 hover:bg-transparent",
               isActive
                 ? "text-destructive hover:text-destructive"
                 : "text-muted-foreground hover:text-foreground"
