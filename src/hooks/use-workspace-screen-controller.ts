@@ -570,7 +570,7 @@ export function useWorkspaceScreenController() {
     }
 
     setIsRightSidebarCollapsed(true);
-  }, [activeChannel]);
+  }, [activeChannel, setIsRightSidebarCollapsed]);
 
   useEffect(() => {
     if (!activeCall || activeCall.kind !== "voice") {
@@ -660,6 +660,7 @@ export function useWorkspaceScreenController() {
 
   const {
     isConnecting: isCallConnecting,
+    isSelfSpeaking,
     leave: disconnectSfuCall,
     selfVoiceState,
   } = useCloudflareSfuCall({
@@ -1272,6 +1273,10 @@ export function useWorkspaceScreenController() {
     toast("Screen share is not part of the SFU audio rollout yet.");
   };
 
+  const triggerCamera = () => {
+    toast("Camera streaming will land in a later voice/video rollout.");
+  };
+
   const setOnboardingHandleDraft = (value: string) => {
     const normalizedValue = normalizeHandleInput(value);
     setHandleDraft(normalizedValue);
@@ -1401,6 +1406,7 @@ export function useWorkspaceScreenController() {
     headerTitle,
     inviteLink,
     isCallConnecting,
+    isSelfSpeaking,
     isCreateChannelOpen,
     isCreateServerOpen,
     isDeleteChannelOpen,
@@ -1474,6 +1480,7 @@ export function useWorkspaceScreenController() {
     toggleLeftSidebar,
     toggleMute,
     toggleRightSidebar,
+    triggerCamera,
     triggerShareScreen,
     voiceChannels,
     voicePresence,

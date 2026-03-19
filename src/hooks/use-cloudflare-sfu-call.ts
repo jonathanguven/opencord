@@ -53,6 +53,9 @@ interface SubscribeTrack {
 
 const trackKey = (track: SubscribeTrack) =>
   `${track.sessionId}:${track.trackName}`;
+const SPEAKING_SAMPLE_SIZE = 512;
+const SPEAKING_THRESHOLD = 0.045;
+const SPEAKING_HANGOVER_MS = 180;
 
 const ignorePromise = (promise: Promise<unknown>) => {
   promise.catch(() => undefined);
@@ -65,6 +68,7 @@ export const useCloudflareSfuCall = ({
   onMoveToChannel,
 }: UseCloudflareSfuCallParams) => {
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isSelfSpeaking, setIsSelfSpeaking] = useState(false);
   const connectDmCallSession = useAction(api.calls.connectDmCallSession);
   const connectVoiceSession = useAction(api.voice.connectVoiceSession);
   const subscribeToRemoteTracks = useAction(
@@ -103,6 +107,98 @@ export const useCloudflareSfuCall = ({
   const connectAttemptRef = useRef(0);
   const isConnectingRef = useRef(false);
   const sessionIdRef = useRef<string | null>(null);
+  const speakingAudioContextRef = useRef<AudioContext | null>(null);
+  const speakingAnalyserRef = useRef<AnalyserNode | null>(null);
+  const speakingSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const speakingFrameRef = useRef<number | null>(null);
+  const speakingBufferRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
+  const lastSpeakingAtRef = useRef(0);
+
+  const stopSpeakingDetection = useEffectEvent(() => {
+    if (speakingFrameRef.current !== null) {
+      window.cancelAnimationFrame(speakingFrameRef.current);
+      speakingFrameRef.current = null;
+    }
+
+    speakingSourceRef.current?.disconnect();
+    speakingSourceRef.current = null;
+    speakingAnalyserRef.current?.disconnect();
+    speakingAnalyserRef.current = null;
+
+    const audioContext = speakingAudioContextRef.current;
+    speakingAudioContextRef.current = null;
+    if (audioContext) {
+      ignorePromise(audioContext.close());
+    }
+
+    speakingBufferRef.current = null;
+    lastSpeakingAtRef.current = 0;
+    setIsSelfSpeaking(false);
+  });
+
+  const startSpeakingDetection = useEffectEvent((stream: MediaStream) => {
+    stopSpeakingDetection();
+
+    const [audioTrack] = stream.getAudioTracks();
+    if (!audioTrack) {
+      return;
+    }
+
+    const audioContext = new AudioContext();
+    const analyser = audioContext.createAnalyser();
+    analyser.fftSize = SPEAKING_SAMPLE_SIZE;
+    analyser.smoothingTimeConstant = 0.82;
+
+    const source = audioContext.createMediaStreamSource(stream);
+    source.connect(analyser);
+
+    speakingAudioContextRef.current = audioContext;
+    speakingAnalyserRef.current = analyser;
+    speakingSourceRef.current = source;
+    speakingBufferRef.current = new Uint8Array(
+      new ArrayBuffer(analyser.fftSize)
+    );
+
+    const updateSpeakingState = () => {
+      const currentAnalyser = speakingAnalyserRef.current;
+      const currentBuffer = speakingBufferRef.current;
+      const currentTrack = localTrackRef.current;
+
+      if (!(currentAnalyser && currentBuffer && currentTrack)) {
+        return;
+      }
+
+      currentAnalyser.getByteTimeDomainData(currentBuffer);
+
+      let sumSquares = 0;
+      for (const sample of currentBuffer) {
+        const normalizedSample = sample / 128 - 1;
+        sumSquares += normalizedSample * normalizedSample;
+      }
+
+      const rms = Math.sqrt(sumSquares / currentBuffer.length);
+      const canSpeak =
+        currentTrack.enabled &&
+        currentTrack.readyState === "live" &&
+        !activeCall?.muted &&
+        !selfVoiceState?.deafened &&
+        !selfVoiceState?.forcedMute;
+      const isSpeakingNow = canSpeak && rms >= SPEAKING_THRESHOLD;
+
+      if (isSpeakingNow) {
+        lastSpeakingAtRef.current = performance.now();
+      }
+
+      const withinHangover =
+        performance.now() - lastSpeakingAtRef.current < SPEAKING_HANGOVER_MS;
+      setIsSelfSpeaking(isSpeakingNow || withinHangover);
+      speakingFrameRef.current =
+        window.requestAnimationFrame(updateSpeakingState);
+    };
+
+    speakingFrameRef.current =
+      window.requestAnimationFrame(updateSpeakingState);
+  });
 
   const destroyMedia = useEffectEvent(async (skipBackendLeave: boolean) => {
     const callAtCleanup = activeCall;
@@ -123,6 +219,7 @@ export const useCloudflareSfuCall = ({
 
     peerConnectionRef.current?.close();
     peerConnectionRef.current = null;
+    stopSpeakingDetection();
 
     localTrackRef.current?.stop();
     localTrackRef.current = null;
@@ -285,6 +382,7 @@ export const useCloudflareSfuCall = ({
       peerConnectionRef.current = peerConnection;
       localStreamRef.current = stream;
       localTrackRef.current = localTrack;
+      startSpeakingDetection(stream);
 
       peerConnection.addTrack(localTrack, stream);
       localTrack.enabled = !(
@@ -535,6 +633,7 @@ export const useCloudflareSfuCall = ({
 
   useEffect(() => {
     return () => {
+      stopSpeakingDetection();
       ignorePromise(destroyMedia(false));
     };
   }, []);
@@ -545,6 +644,7 @@ export const useCloudflareSfuCall = ({
 
   return {
     isConnecting,
+    isSelfSpeaking,
     leave,
     selfVoiceState,
   };

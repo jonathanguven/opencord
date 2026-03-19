@@ -143,9 +143,11 @@ type WorkspaceCallContextValue = Pick<
   WorkspaceController,
   | "activeCall"
   | "isCallConnecting"
+  | "isSelfSpeaking"
   | "joinVoiceChannel"
   | "leaveActiveCall"
   | "startConversationCall"
+  | "triggerCamera"
   | "toggleDeafen"
   | "toggleMute"
   | "triggerShareScreen"
@@ -227,6 +229,7 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
     headerTitle,
     inviteLink,
     isCallConnecting,
+    isSelfSpeaking,
     isCreateChannelOpen,
     isCreateServerOpen,
     isDeleteChannelOpen,
@@ -299,6 +302,7 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
     toggleLeftSidebar,
     toggleMute,
     toggleRightSidebar,
+    triggerCamera,
     triggerShareScreen,
     voiceChannels,
     voicePresence,
@@ -561,9 +565,11 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
     () => ({
       activeCall,
       isCallConnecting,
+      isSelfSpeaking,
       joinVoiceChannel,
       leaveActiveCall,
       startConversationCall,
+      triggerCamera,
       toggleDeafen,
       toggleMute,
       triggerShareScreen,
@@ -571,9 +577,11 @@ export function WorkspaceScreenProvider({ children }: { children: ReactNode }) {
     [
       activeCall,
       isCallConnecting,
+      isSelfSpeaking,
       joinVoiceChannel,
       leaveActiveCall,
       startConversationCall,
+      triggerCamera,
       toggleDeafen,
       toggleMute,
       triggerShareScreen,

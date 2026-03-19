@@ -5,7 +5,6 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import { CallTray } from "@/components/workspace/call-tray";
 import { InviteDialog } from "@/components/workspace/invite-dialog";
 import { WorkspaceCommandPalette } from "@/components/workspace/workspace-command-palette";
 import {
@@ -24,7 +23,6 @@ import {
 import { WorkspaceMainContent } from "@/components/workspace/workspace-main-content";
 import { WorkspaceRightSidebar } from "@/components/workspace/workspace-right-sidebar";
 import {
-  useWorkspaceCall,
   useWorkspaceDialogs,
   useWorkspaceUi,
   useWorkspaceView,
@@ -47,7 +45,6 @@ function WorkspaceScreenLayout() {
   const view = useWorkspaceView();
   const ui = useWorkspaceUi();
   const dialogs = useWorkspaceDialogs();
-  const call = useWorkspaceCall();
   const [leftSidebarWidth, setLeftSidebarWidth] = useLocalStorageState(
     LEFT_SIDEBAR_STORAGE_KEY,
     280,
@@ -167,17 +164,6 @@ function WorkspaceScreenLayout() {
                   <div className="min-h-0 flex-1">
                     <WorkspaceMainContent />
                   </div>
-
-                  {call.activeCall?.kind === "voice" ? (
-                    <CallTray
-                      activeCall={call.activeCall}
-                      isConnecting={call.isCallConnecting}
-                      onDeafen={call.toggleDeafen}
-                      onLeave={call.leaveActiveCall}
-                      onMute={call.toggleMute}
-                      onShareScreen={call.triggerShareScreen}
-                    />
-                  ) : null}
                 </main>
 
                 {ui.isRightSidebarCollapsed ? null : (
