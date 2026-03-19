@@ -256,7 +256,11 @@ export function WorkspaceSidebar() {
 
       <div className="min-h-0 flex-1">
         {view.isFriendsView ? (
-          <ScrollArea className="h-full">
+          <ScrollArea
+            className="h-full"
+            scrollbarClassName="data-vertical:w-2 data-horizontal:h-1"
+            thumbClassName="bg-white/40"
+          >
             <div className="flex flex-col gap-1.5 p-2.5">
               <Button
                 className={cn(
@@ -324,7 +328,11 @@ export function WorkspaceSidebar() {
             </div>
           </ScrollArea>
         ) : (
-          <ScrollArea className="h-full">
+          <ScrollArea
+            className="h-full"
+            scrollbarClassName="data-vertical:w-1.75 data-horizontal:h-1"
+            thumbClassName="bg-white/35"
+          >
             <div className="flex flex-col gap-2 p-2">
               <div className="flex items-center gap-2">
                 <div className="min-w-0 flex-1">

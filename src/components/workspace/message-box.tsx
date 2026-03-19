@@ -111,7 +111,7 @@ export function MessageBox({
           </Button>
         </div>
       ) : null}
-      <InputGroup className="min-h-0 items-end rounded-2xl">
+      <InputGroup className="min-h-0 items-end overflow-hidden rounded-2xl">
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
@@ -144,7 +144,7 @@ export function MessageBox({
           </DropdownMenuContent>
         </DropdownMenu>
         <InputGroupTextarea
-          className="min-h-0 overflow-y-hidden px-3 py-3 leading-6"
+          className="field-sizing-fixed min-h-0 overflow-y-hidden px-3 py-3 leading-6"
           maxLength={4000}
           onChange={(event) => onChange(event.target.value)}
           onKeyDown={(event) => {

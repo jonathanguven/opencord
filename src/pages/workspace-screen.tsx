@@ -62,7 +62,7 @@ function WorkspaceScreenLayout() {
     !view.isFriendsView || Boolean(view.activeConversationId);
 
   return (
-    <div className="relative flex min-h-svh bg-[#313338] text-[#f2f3f5]">
+    <div className="relative flex h-svh overflow-hidden bg-[#313338] text-[#f2f3f5]">
       <OnboardingDialog
         displayNameDraft={dialogs.displayNameDraft}
         handleDraft={dialogs.handleDraft}
@@ -135,10 +135,10 @@ function WorkspaceScreenLayout() {
 
       <WorkspaceRail />
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex min-h-svh min-w-0 flex-1">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1">
           <ResizablePanelGroup
-            className="min-h-svh flex-1"
+            className="min-h-0 flex-1"
             onLayoutChanged={() => {
               setLeftSidebarWidth(leftSidebarWidthRef.current);
             }}
@@ -160,7 +160,7 @@ function WorkspaceScreenLayout() {
             <ResizableHandle />
 
             <ResizablePanel minSize={280}>
-              <div className="flex h-full min-w-0">
+              <div className="flex h-full min-h-0 min-w-0 overflow-hidden">
                 <main className="flex h-full min-w-0 flex-1 flex-col bg-background">
                   {showWorkspaceHeader ? <WorkspaceHeader /> : null}
 
