@@ -22,6 +22,11 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { Tabs, TabsContent, TabsList } from "@/components/ui/tabs";
 import {
   Tooltip,
@@ -37,10 +42,11 @@ import type {
   FriendLite,
   FriendsResult,
 } from "@/components/workspace/workspace-types";
+import { validateHandle } from "@/lib/handles";
 import { getDisplayName, getInitials } from "@/lib/presentation";
 
 const friendsTabClassName =
-  "inline-flex items-center justify-center rounded-md px-3 py-2 font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground data-[active]:bg-secondary data-[active]:text-secondary-foreground";
+  "inline-flex cursor-pointer items-center justify-center rounded-md px-3 py-2 font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground data-[active]:bg-secondary data-[active]:text-secondary-foreground disabled:cursor-not-allowed aria-disabled:cursor-not-allowed";
 
 const searchInputClassName =
   "h-10 bg-input/30 pr-4 pl-11 shadow-none placeholder:text-muted-foreground dark:bg-input/30";
@@ -81,6 +87,8 @@ export function FriendsHome() {
       ),
     [normalizedQuery, view.friends]
   );
+  const isFriendHandleValid =
+    validateHandle(friends.friendHandleDraft.trim()) === null;
 
   return (
     <Tabs
@@ -286,11 +294,11 @@ export function FriendsHome() {
               className="mt-4 flex flex-col gap-3"
               onSubmit={friends.submitFriendRequest}
             >
-              <div className="flex h-12 items-center rounded-lg border bg-input/30 pr-2 pl-4">
-                <span className="mr-2 shrink-0 text-muted-foreground">@</span>
-                <Input
+              <InputGroup className="h-12 bg-input/30 pr-2">
+                <InputGroupInput
                   aria-label="Friend handle"
-                  className="h-full border-0 bg-transparent px-0 shadow-none focus-visible:border-transparent focus-visible:ring-0"
+                  autoFocus={friends.friendsTab === "add"}
+                  className="h-full px-4 shadow-none"
                   id="friend-handle-inline"
                   onChange={(event) =>
                     friends.setFriendHandleDraft(event.target.value)
@@ -298,14 +306,18 @@ export function FriendsHome() {
                   placeholder="You can add friends with their Opencord username."
                   value={friends.friendHandleDraft}
                 />
-                <Button
-                  disabled={!friends.friendHandleDraft.trim()}
-                  type="submit"
-                  variant="friend"
-                >
-                  Send Friend Request
-                </Button>
-              </div>
+                <InputGroupAddon align="inline-end">
+                  <Button
+                    className="-mr-1 rounded-md disabled:pointer-events-auto disabled:cursor-not-allowed"
+                    disabled={!isFriendHandleValid}
+                    size="lg"
+                    type="submit"
+                    variant="friend"
+                  >
+                    Send Friend Request
+                  </Button>
+                </InputGroupAddon>
+              </InputGroup>
             </form>
           </div>
         </div>

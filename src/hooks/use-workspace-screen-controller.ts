@@ -3,6 +3,7 @@ import { useUploadFile } from "@convex-dev/r2/react";
 import { useAction, useMutation, useQuery } from "convex/react";
 import {
   type FormEvent,
+  useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -23,6 +24,7 @@ import type {
   WorkspaceResult,
 } from "@/components/workspace/workspace-types";
 import { useCloudflareSfuCall } from "@/hooks/use-cloudflare-sfu-call";
+import { useLocalStorageState } from "@/hooks/use-local-storage-state";
 import {
   getChannelDisplayName,
   normalizeTextChannelName,
@@ -61,6 +63,8 @@ type FriendsAreaLocation =
 
 const DEFAULT_INVITE_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000;
 const CHANNELS_PATH = "/channels";
+const MEMBERS_LIST_COLLAPSED_STORAGE_KEY = "workspace-members-list-collapsed";
+const USER_PROFILE_COLLAPSED_STORAGE_KEY = "workspace-user-profile-collapsed";
 const MAX_MESSAGE_IMAGE_BYTES = 20 * 1024 * 1024;
 
 const toVoiceCallState = (
@@ -104,6 +108,8 @@ const expandPanel = (
   panelRef.current?.expand();
   onExpanded();
 };
+
+const parseStoredBoolean = (storedValue: string) => storedValue === "true";
 
 const resolveActiveThread = ({
   activeChannel,
@@ -236,7 +242,14 @@ export function useWorkspaceScreenController() {
 
   const [activeCall, setActiveCall] = useState<ActiveCall | null>(null);
   const [isLeftSidebarCollapsed, setIsLeftSidebarCollapsed] = useState(false);
-  const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(false);
+  const [isMemberListCollapsed, setIsMemberListCollapsed] =
+    useLocalStorageState(MEMBERS_LIST_COLLAPSED_STORAGE_KEY, false, {
+      deserialize: parseStoredBoolean,
+    });
+  const [isUserProfileCollapsed, setIsUserProfileCollapsed] =
+    useLocalStorageState(USER_PROFILE_COLLAPSED_STORAGE_KEY, false, {
+      deserialize: parseStoredBoolean,
+    });
   const [friendsTab, setFriendsTab] = useState("all");
   const [messageDraft, setMessageDraft] = useState("");
   const [pendingImageAttachment, setPendingImageAttachment] =
@@ -298,6 +311,21 @@ export function useWorkspaceScreenController() {
       : null;
   const isFriendsView = !activeServerId;
   const isServerView = Boolean(activeServerId);
+  const isRightSidebarCollapsed = isFriendsView
+    ? isUserProfileCollapsed
+    : isMemberListCollapsed;
+
+  const setIsRightSidebarCollapsed = useCallback(
+    (nextValue: boolean | ((currentValue: boolean) => boolean)) => {
+      if (isFriendsView) {
+        setIsUserProfileCollapsed(nextValue);
+        return;
+      }
+
+      setIsMemberListCollapsed(nextValue);
+    },
+    [isFriendsView, setIsMemberListCollapsed, setIsUserProfileCollapsed]
+  );
 
   const activeServer =
     activeServerId && servers
@@ -581,7 +609,7 @@ export function useWorkspaceScreenController() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [setIsRightSidebarCollapsed]);
 
   useEffect(() => {
     if (isCreateServerOpen) {
@@ -727,6 +755,13 @@ export function useWorkspaceScreenController() {
 
     if (!handle) {
       toast.error("Enter a handle to send a request.");
+      return;
+    }
+
+    const handleError = validateHandle(handle);
+
+    if (handleError) {
+      toast.error(handleError);
       return;
     }
 
