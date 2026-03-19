@@ -59,7 +59,8 @@ export function DmPage() {
       />
       <ScrollArea
         className="min-h-0 flex-1"
-        scrollbarClassName="data-vertical:w-0 data-horizontal:h-0 opacity-0"
+        scrollbarClassName="data-vertical:w-4 data-horizontal:h-0 opacity-0 transition-opacity hover:opacity-100"
+        thumbClassName="bg-white/35"
       >
         <MessageFeed
           composerRef={composerRef}
