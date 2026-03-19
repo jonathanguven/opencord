@@ -993,7 +993,7 @@ function DroppableChannelList({
 
   return (
     <div
-      className="flex flex-col gap-1"
+      className="flex flex-col gap-0.5"
       data-rfd-droppable-context-id={droppableContextId}
       data-rfd-droppable-id={droppableId}
       ref={innerRef}
@@ -1054,17 +1054,26 @@ function ChannelRow({
     tabIndex,
   } = getDraggableBindings(draggableProvided, canManageChannels);
 
+  let channelSurfaceClassName = "hover:bg-accent/90";
+  if (isDragging) {
+    channelSurfaceClassName = "bg-sidebar";
+  }
+  if (active) {
+    channelSurfaceClassName =
+      "bg-sidebar-accent text-sidebar-accent-foreground";
+  }
+
   const channelButton = (
     <Button
       aria-describedby={ariaDescribedBy}
       className={cn(
-        listItemClassName,
+        "w-full justify-start rounded-lg text-left",
         "flex-col items-stretch gap-1",
         active
           ? "text-sidebar-accent-foreground"
           : "text-muted-foreground hover:text-foreground",
         canManageChannels && "cursor-grab active:cursor-grabbing",
-        isDragging && "border border-sidebar-border bg-sidebar shadow-lg"
+        isDragging && "border border-sidebar-border py-0"
       )}
       data-rfd-drag-handle-context-id={dataDragHandleContextId}
       data-rfd-drag-handle-draggable-id={dataDragHandleDraggableId}
@@ -1086,10 +1095,8 @@ function ChannelRow({
     >
       <div
         className={cn(
-          "flex items-center gap-2.5 rounded-md px-2 py-1",
-          active
-            ? "bg-sidebar-accent text-sidebar-accent-foreground"
-            : "hover:bg-accent/90"
+          "flex w-full items-center gap-2.5 rounded-md px-2 py-1.5",
+          channelSurfaceClassName
         )}
       >
         <Icon
