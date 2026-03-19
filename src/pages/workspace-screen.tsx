@@ -1,3 +1,5 @@
+import { useRef } from "react";
+
 import {
   ResizableHandle,
   ResizablePanel,
@@ -27,6 +29,9 @@ import {
   useWorkspaceView,
   WorkspaceScreenProvider,
 } from "@/components/workspace/workspace-screen-context";
+import { useLocalStorageState } from "@/hooks/use-local-storage-state";
+
+const LEFT_SIDEBAR_STORAGE_KEY = "workspace-left-sidebar-width";
 
 export function WorkspaceScreen() {
   return (
@@ -41,6 +46,14 @@ function WorkspaceScreenLayout() {
   const ui = useWorkspaceUi();
   const dialogs = useWorkspaceDialogs();
   const call = useWorkspaceCall();
+  const [leftSidebarWidth, setLeftSidebarWidth] = useLocalStorageState(
+    LEFT_SIDEBAR_STORAGE_KEY,
+    280,
+    {
+      deserialize: (storedValue) => Number(storedValue),
+    }
+  );
+  const leftSidebarWidthRef = useRef(leftSidebarWidth);
   const showWorkspaceHeader =
     !view.isFriendsView || Boolean(view.activeConversationId);
 
@@ -122,46 +135,54 @@ function WorkspaceScreenLayout() {
         <div className="flex min-h-svh min-w-0 flex-1">
           <ResizablePanelGroup
             className="min-h-svh flex-1"
+            onLayoutChanged={() => {
+              setLeftSidebarWidth(leftSidebarWidthRef.current);
+            }}
             orientation="horizontal"
           >
             <ResizablePanel
-              defaultSize="22%"
-              maxSize="26%"
-              minSize="12%"
-              panelRef={ui.leftSidebarRef}
+              defaultSize={leftSidebarWidth}
+              groupResizeBehavior="preserve-pixel-size"
+              maxSize={360}
+              minSize={200}
+              onResize={(panelSize) => {
+                leftSidebarWidthRef.current = panelSize.inPixels;
+              }}
             >
               <WorkspaceSidebar />
             </ResizablePanel>
 
             <ResizableHandle />
 
-            <ResizablePanel defaultSize="78%" minSize="40%">
-              <main className="flex h-full min-w-0 flex-col bg-background">
-                {showWorkspaceHeader ? <WorkspaceHeader /> : null}
+            <ResizablePanel minSize={280}>
+              <div className="flex h-full min-w-0">
+                <main className="flex h-full min-w-0 flex-1 flex-col bg-background">
+                  {showWorkspaceHeader ? <WorkspaceHeader /> : null}
 
-                <div className="min-h-0 flex-1">
-                  <WorkspaceMainContent />
-                </div>
+                  <div className="min-h-0 flex-1">
+                    <WorkspaceMainContent />
+                  </div>
 
-                {call.activeCall?.kind === "voice" ? (
-                  <CallTray
-                    activeCall={call.activeCall}
-                    isConnecting={call.isCallConnecting}
-                    onDeafen={call.toggleDeafen}
-                    onLeave={call.leaveActiveCall}
-                    onMute={call.toggleMute}
-                    onShareScreen={call.triggerShareScreen}
-                  />
-                ) : null}
-              </main>
+                  {call.activeCall?.kind === "voice" ? (
+                    <CallTray
+                      activeCall={call.activeCall}
+                      isConnecting={call.isCallConnecting}
+                      onDeafen={call.toggleDeafen}
+                      onLeave={call.leaveActiveCall}
+                      onMute={call.toggleMute}
+                      onShareScreen={call.triggerShareScreen}
+                    />
+                  ) : null}
+                </main>
+
+                {ui.isRightSidebarCollapsed ? null : (
+                  <div className="w-[340px] shrink-0">
+                    <WorkspaceRightSidebar />
+                  </div>
+                )}
+              </div>
             </ResizablePanel>
           </ResizablePanelGroup>
-
-          {ui.isRightSidebarCollapsed ? null : (
-            <div className="w-[340px] shrink-0">
-              <WorkspaceRightSidebar />
-            </div>
-          )}
         </div>
       </div>
     </div>
