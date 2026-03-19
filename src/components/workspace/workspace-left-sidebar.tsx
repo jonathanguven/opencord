@@ -247,7 +247,7 @@ export function WorkspaceSidebar() {
   const isFriendsHomeActive = view.isFriendsView && !view.activeConversationId;
 
   return (
-    <aside className="flex h-full flex-col border-sidebar-border border-r bg-sidebar pb-[70px] text-sidebar-foreground">
+    <aside className="flex h-full flex-col border-sidebar-border border-r bg-sidebar pb-16 text-sidebar-foreground">
       {view.isFriendsView ? (
         <div className="border-sidebar-border border-b p-2.5">
           <WorkspaceCommandPaletteTrigger />
@@ -468,7 +468,7 @@ export function WorkspaceProfileDock() {
 
   return (
     <div className="p-1.5">
-      <div className="flex items-center gap-1 rounded-lg bg-accent px-3 py-2.5 shadow-[inset_0_1px_0_rgb(255_255_255/0.05),0_14px_32px_rgb(0_0_0/0.2)]">
+      <div className="flex h-14 items-center gap-1 rounded-md border border-border/60 bg-accent px-3">
         <Avatar className="size-10">
           <AvatarImage src={currentUser?.avatarUrl ?? undefined} />
           <AvatarFallback className="bg-primary/20 text-primary-foreground">

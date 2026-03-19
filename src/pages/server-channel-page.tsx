@@ -71,23 +71,21 @@ export function ServerChannelPage() {
           onSubmitEdit={thread.submitEditingMessage}
         />
       </ScrollArea>
-      <div className="shrink-0 border-border/60 border-t px-3 py-2.5">
-        <MessageBox
-          attachment={thread.pendingImageAttachment}
-          draft={thread.messageDraft}
-          onChange={thread.setMessageDraft}
-          onEditLatestMessage={thread.editLatestOwnMessage}
-          onRemoveAttachment={() =>
-            thread
-              .clearPendingImageAttachment({ deleteRemote: true })
-              .catch(() => undefined)
-          }
-          onSend={thread.sendActiveMessage}
-          onUploadImage={thread.attachImageToDraft}
-          placeholder={`Message ${getChannelDisplayName(activeChannel)}`}
-          textareaRef={composerRef}
-        />
-      </div>
+      <MessageBox
+        attachment={thread.pendingImageAttachment}
+        draft={thread.messageDraft}
+        onChange={thread.setMessageDraft}
+        onEditLatestMessage={thread.editLatestOwnMessage}
+        onRemoveAttachment={() =>
+          thread
+            .clearPendingImageAttachment({ deleteRemote: true })
+            .catch(() => undefined)
+        }
+        onSend={thread.sendActiveMessage}
+        onUploadImage={thread.attachImageToDraft}
+        placeholder={`Message ${getChannelDisplayName(activeChannel)}`}
+        textareaRef={composerRef}
+      />
     </div>
   );
 }
