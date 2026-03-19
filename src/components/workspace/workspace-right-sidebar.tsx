@@ -1,6 +1,7 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DmProfilePanel } from "@/components/workspace/dm-profile-panel";
 import { MembersPanel } from "@/components/workspace/members-panel";
+import { VoiceChannelChatSidebar } from "@/components/workspace/voice-channel-chat-sidebar";
 import {
   useWorkspaceModeration,
   useWorkspaceView,
@@ -10,6 +11,38 @@ export function WorkspaceRightSidebar() {
   const view = useWorkspaceView();
   const moderation = useWorkspaceModeration();
   const canModerate = view.permissions.moveMembers || view.permissions.admin;
+  const activeVoiceChannel =
+    view.activeChannel?.kind === "voice" ? view.activeChannel : null;
+  let sidebarContent: React.ReactNode;
+
+  if (view.isFriendsView) {
+    sidebarContent = (
+      <ScrollArea className="flex-1">
+        <DmProfilePanel conversation={view.activeConversation} />
+      </ScrollArea>
+    );
+  } else if (activeVoiceChannel) {
+    sidebarContent = (
+      <VoiceChannelChatSidebar
+        channel={activeVoiceChannel}
+        currentUserId={view.current?.user?._id}
+      />
+    );
+  } else {
+    sidebarContent = (
+      <ScrollArea className="flex-1">
+        <MembersPanel
+          canModerate={canModerate}
+          onForceDeafen={moderation.forceDeafenMember}
+          onForceMute={moderation.forceMuteMember}
+          onMoveMember={moderation.moveWorkspaceMember}
+          voiceChannels={view.voiceChannels}
+          voicePresence={view.voicePresence ?? []}
+          workspace={view.workspace}
+        />
+      </ScrollArea>
+    );
+  }
 
   return (
     <aside className="flex h-full flex-col border-border/60 border-l bg-card/40">
@@ -22,21 +55,7 @@ export function WorkspaceRightSidebar() {
         </div>
       ) : null}
 
-      <ScrollArea className="flex-1">
-        {view.isFriendsView ? (
-          <DmProfilePanel conversation={view.activeConversation} />
-        ) : (
-          <MembersPanel
-            canModerate={canModerate}
-            onForceDeafen={moderation.forceDeafenMember}
-            onForceMute={moderation.forceMuteMember}
-            onMoveMember={moderation.moveWorkspaceMember}
-            voiceChannels={view.voiceChannels}
-            voicePresence={view.voicePresence ?? []}
-            workspace={view.workspace}
-          />
-        )}
-      </ScrollArea>
+      {sidebarContent}
     </aside>
   );
 }

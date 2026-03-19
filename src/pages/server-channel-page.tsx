@@ -44,7 +44,6 @@ export function ServerChannelPage() {
       <VoiceChannelPanel
         activeCall={call.activeCall}
         channel={activeChannel}
-        members={view.activeVoiceMembers}
         onJoin={() => call.joinVoiceChannel(activeChannel)}
       />
     );

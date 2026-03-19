@@ -1,3 +1,4 @@
+import { MessageCircleIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -15,6 +16,7 @@ export function WorkspaceHeader() {
   const view = useWorkspaceView();
   const ui = useWorkspaceUi();
   const call = useWorkspaceCall();
+  const isVoiceChannelView = view.activeChannel?.kind === "voice";
   let callActionLabel = "Start call";
   const isInConversationCall =
     view.activeConversation?._id &&
@@ -31,6 +33,7 @@ export function WorkspaceHeader() {
   } else if (hasActiveConversationCall) {
     callActionLabel = "Join call";
   }
+
   let rightSidebarLabel = ui.isRightSidebarCollapsed
     ? "Show Member List"
     : "Hide Member List";
@@ -39,9 +42,14 @@ export function WorkspaceHeader() {
     rightSidebarLabel = ui.isRightSidebarCollapsed
       ? "Show User Profile"
       : "Hide User Profile";
+  } else if (isVoiceChannelView) {
+    rightSidebarLabel = ui.isRightSidebarCollapsed
+      ? "Show Voice Chat"
+      : "Hide Voice Chat";
   }
 
   let callActionButton: React.ReactNode = null;
+  let rightSidebarIcon: React.ReactNode = <MemberListIcon />;
 
   if (view.isFriendsView && view.activeConversation) {
     if (callActionLabel === "Start call") {
@@ -80,6 +88,12 @@ export function WorkspaceHeader() {
     }
   }
 
+  if (view.isFriendsView) {
+    rightSidebarIcon = <UserProfileIcon />;
+  } else if (isVoiceChannelView) {
+    rightSidebarIcon = <MessageCircleIcon />;
+  }
+
   return (
     <header className="flex items-center justify-between gap-3 border-border/60 border-b px-3 py-2">
       <div className="flex min-w-0 items-start gap-2">
@@ -115,7 +129,7 @@ export function WorkspaceHeader() {
               />
             }
           >
-            {view.isFriendsView ? <UserProfileIcon /> : <MemberListIcon />}
+            {rightSidebarIcon}
           </TooltipTrigger>
           <TooltipContent>{rightSidebarLabel}</TooltipContent>
         </Tooltip>

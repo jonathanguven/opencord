@@ -126,7 +126,7 @@ const resolveActiveThread = ({
     };
   }
 
-  if (activeChannel?.kind !== "text") {
+  if (!activeChannel) {
     return null;
   }
 
@@ -504,6 +504,14 @@ export function useWorkspaceScreenController() {
       setLastVisitedChannel(activeServerId, activeChannel._id);
     }
   }, [activeChannel, activeServerId]);
+
+  useEffect(() => {
+    if (activeChannel?.kind !== "voice") {
+      return;
+    }
+
+    setIsRightSidebarCollapsed(true);
+  }, [activeChannel]);
 
   useEffect(() => {
     if (!activeCall || activeCall.kind !== "voice") {
