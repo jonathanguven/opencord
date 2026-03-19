@@ -51,13 +51,16 @@ export function DmPage() {
   const isConversationCallLive = Boolean(activeConversation.activeCall);
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <DmCallBanner
         conversationId={activeConversation._id}
         conversationName={conversationName}
         hasActiveSession={isConversationCallLive}
       />
-      <ScrollArea className="min-h-0 flex-1">
+      <ScrollArea
+        className="min-h-0 flex-1"
+        scrollbarClassName="data-vertical:w-0 data-horizontal:h-0 opacity-0"
+      >
         <MessageFeed
           composerRef={composerRef}
           currentUserId={view.current?.user?._id}
@@ -74,23 +77,21 @@ export function DmPage() {
           onSubmitEdit={thread.submitEditingMessage}
         />
       </ScrollArea>
-      <div className="border-border/60 border-t p-4">
-        <MessageBox
-          attachment={thread.pendingImageAttachment}
-          draft={thread.messageDraft}
-          onChange={thread.setMessageDraft}
-          onEditLatestMessage={thread.editLatestOwnMessage}
-          onRemoveAttachment={() =>
-            thread
-              .clearPendingImageAttachment({ deleteRemote: true })
-              .catch(() => undefined)
-          }
-          onSend={thread.sendActiveMessage}
-          onUploadImage={thread.attachImageToDraft}
-          placeholder={`Message ${conversationName}`}
-          textareaRef={composerRef}
-        />
-      </div>
+      <MessageBox
+        attachment={thread.pendingImageAttachment}
+        draft={thread.messageDraft}
+        onChange={thread.setMessageDraft}
+        onEditLatestMessage={thread.editLatestOwnMessage}
+        onRemoveAttachment={() =>
+          thread
+            .clearPendingImageAttachment({ deleteRemote: true })
+            .catch(() => undefined)
+        }
+        onSend={thread.sendActiveMessage}
+        onUploadImage={thread.attachImageToDraft}
+        placeholder={`Message ${conversationName}`}
+        textareaRef={composerRef}
+      />
     </div>
   );
 }

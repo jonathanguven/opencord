@@ -20,7 +20,7 @@ export function VoiceChannelChatSidebar({
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <div className="border-border/60 border-b px-4 py-3">
         <div className="flex items-center gap-2 font-medium text-sm">
           <MessageCircleIcon className="size-4 text-muted-foreground" />
@@ -31,7 +31,10 @@ export function VoiceChannelChatSidebar({
         </div>
       </div>
 
-      <ScrollArea className="min-h-0 flex-1">
+      <ScrollArea
+        className="min-h-0 flex-1"
+        scrollbarClassName="data-vertical:w-0 data-horizontal:h-0 opacity-0"
+      >
         <MessageFeed
           composerRef={composerRef}
           currentUserId={currentUserId}
@@ -49,23 +52,21 @@ export function VoiceChannelChatSidebar({
         />
       </ScrollArea>
 
-      <div className="border-border/60 border-t px-3 py-2.5">
-        <MessageBox
-          attachment={thread.pendingImageAttachment}
-          draft={thread.messageDraft}
-          onChange={thread.setMessageDraft}
-          onEditLatestMessage={thread.editLatestOwnMessage}
-          onRemoveAttachment={() =>
-            thread
-              .clearPendingImageAttachment({ deleteRemote: true })
-              .catch(() => undefined)
-          }
-          onSend={thread.sendActiveMessage}
-          onUploadImage={thread.attachImageToDraft}
-          placeholder={`Message ${channel.name} voice chat`}
-          textareaRef={composerRef}
-        />
-      </div>
+      <MessageBox
+        attachment={thread.pendingImageAttachment}
+        draft={thread.messageDraft}
+        onChange={thread.setMessageDraft}
+        onEditLatestMessage={thread.editLatestOwnMessage}
+        onRemoveAttachment={() =>
+          thread
+            .clearPendingImageAttachment({ deleteRemote: true })
+            .catch(() => undefined)
+        }
+        onSend={thread.sendActiveMessage}
+        onUploadImage={thread.attachImageToDraft}
+        placeholder={`Message ${channel.name} voice chat`}
+        textareaRef={composerRef}
+      />
     </div>
   );
 }

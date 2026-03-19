@@ -488,194 +488,67 @@ export function WorkspaceProfileDock() {
 
   return (
     <div className="p-1.5">
-      <div className="flex flex-col gap-2 rounded-lg bg-accent px-2.5 py-2 shadow-[inset_0_1px_0_rgb(255_255_255/0.05),0_14px_32px_rgb(0_0_0/0.2)]">
-        {activeVoiceCall ? (
-          <>
-            <div className="flex items-center gap-2">
-              <div className="flex min-w-0 flex-1 items-center gap-2">
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/12 text-emerald-400 shadow-[inset_0_1px_0_rgb(255_255_255/0.06)]">
-                  <Volume2Icon className="size-4.5" />
-                </div>
-                <div className="min-w-0">
-                  <div className="truncate font-bold text-[0.95rem] text-emerald-400 leading-tight">
-                    Voice Connected
-                  </div>
-                  <div className="truncate font-semibold text-[0.82rem] text-foreground leading-tight">
-                    {activeVoiceCall.label}
-                  </div>
-                </div>
-              </div>
-              <Button
-                aria-label={
-                  call.isCallConnecting ? "Cancel call" : "Leave call"
-                }
-                className="rounded-lg"
-                onClick={call.leaveActiveCall}
-                size="icon-sm"
-                type="button"
-                variant="destructive"
-              >
-                <PhoneOffIcon className="size-4" />
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                className="h-9 justify-center gap-1.5 rounded-lg border-sidebar-border bg-background/35 px-2 text-[0.76rem] text-foreground hover:bg-background/45"
-                onClick={call.triggerCamera}
-                type="button"
-                variant="outline"
-              >
-                <VideoIcon className="size-3.5" />
-                Camera
-              </Button>
-              <Button
-                className="h-9 justify-center gap-1.5 rounded-lg border-sidebar-border bg-background/35 px-2 text-[0.76rem] text-foreground hover:bg-background/45"
-                onClick={call.triggerShareScreen}
-                type="button"
-                variant="outline"
-              >
-                <MonitorUpIcon className="size-3.5" />
-                Share Screen
-              </Button>
-            </div>
-          </>
-        ) : null}
-
-        <div className="flex items-center gap-2 rounded-lg">
-          <Avatar
-            className={cn(
-              "size-9",
-              showSpeakingRing &&
-                "ring-2 ring-emerald-400 ring-offset-2 ring-offset-accent"
-            )}
-          >
-            <AvatarImage src={currentUser?.avatarUrl ?? undefined} />
-            <AvatarFallback className="bg-primary/20 text-primary-foreground">
-              {getInitials(profileName)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="min-w-0 flex-1 self-center">
-            <div className="truncate font-bold text-[0.88rem] text-foreground leading-tight">
-              {profileName}
-            </div>
-            <div className="truncate text-[0.7rem] text-muted-foreground leading-tight">
-              {profileHandle}
-            </div>
+      <div className="flex h-14 items-center gap-1 rounded-md border border-border/60 bg-accent px-3">
+        <Avatar className="size-10">
+          <AvatarImage src={currentUser?.avatarUrl ?? undefined} />
+          <AvatarFallback className="bg-primary/20 text-primary-foreground">
+            {getInitials(profileName)}
+          </AvatarFallback>
+        </Avatar>
+        <div className="min-w-0 flex-1">
+          <div className="truncate font-bold text-[0.95rem] text-foreground leading-tight">
+            {profileName}
           </div>
-          <div className="flex items-center gap-1 text-muted-foreground">
-            <div
-              className={cn(
-                "flex items-center overflow-hidden rounded-md",
-                activeVoiceCall?.muted
-                  ? "bg-destructive/20 text-destructive"
-                  : "bg-background/20 hover:bg-background/40"
-              )}
-            >
-              <Button
-                aria-label={muteButtonLabel}
-                className={cn(
-                  "h-7 w-8 rounded-none rounded-l-md p-0 hover:bg-transparent",
-                  activeVoiceCall?.muted
-                    ? "text-destructive hover:text-destructive"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-                disabled={!activeVoiceCall}
-                onClick={call.toggleMute}
-                size="none"
-                type="button"
-                variant="ghost"
-              >
-                {activeVoiceCall?.muted ? (
-                  <MicOffIcon className="size-4" />
-                ) : (
-                  <MicIcon className="size-4" />
-                )}
-              </Button>
-              <AudioDeviceMenu
-                devices={inputDevices}
-                isActive={Boolean(activeVoiceCall?.muted)}
-                label="Input"
-                onValueChange={setSelectedInputId}
-                selectedDeviceId={selectedInputId}
-              />
-            </div>
-            <div
-              className={cn(
-                "flex items-center overflow-hidden rounded-md",
-                activeVoiceCall?.deafened
-                  ? "bg-destructive/20 text-destructive"
-                  : "bg-background/20 hover:bg-background/40"
-              )}
-            >
-              <Button
-                aria-label={deafenButtonLabel}
-                className={cn(
-                  "h-7 w-8 rounded-none rounded-l-md p-0 hover:bg-transparent",
-                  activeVoiceCall?.deafened
-                    ? "text-destructive hover:text-destructive"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-                disabled={!activeVoiceCall}
-                onClick={call.toggleDeafen}
-                size="none"
-                type="button"
-                variant="ghost"
-              >
-                {activeVoiceCall?.deafened ? (
-                  <VolumeXIcon className="size-4" />
-                ) : (
-                  <HeadphonesIcon className="size-4" />
-                )}
-              </Button>
-              <AudioDeviceMenu
-                devices={outputDevices}
-                isActive={Boolean(activeVoiceCall?.deafened)}
-                label="Output"
-                onValueChange={setSelectedOutputId}
-                selectedDeviceId={selectedOutputId}
-              />
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button
-                    aria-label="User settings"
-                    className="rounded-md p-1 text-muted-foreground hover:bg-background/40 hover:text-foreground"
-                    size="icon-sm"
-                    variant="ghost"
-                  />
-                }
-              >
-                <SettingsIcon className="size-4 transition-transform duration-200 group-hover/button:rotate-90" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" side="top">
-                <DropdownMenuLabel>
-                  {profileName}
-                  <div className="font-normal text-muted-foreground text-xs">
-                    {profileHandle}
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuGroup>
-                  <DropdownMenuItem onClick={navigation.showAddFriendTab}>
-                    <UserPlusIcon />
-                    Add friend
-                  </DropdownMenuItem>
-                  {view.canCreateServerInvites ? (
-                    <DropdownMenuItem onClick={() => ui.setIsInviteOpen(true)}>
-                      <InviteToServerIcon className="size-4" />
-                      Invite to Server
-                    </DropdownMenuItem>
-                  ) : null}
-                  <DropdownMenuItem onClick={navigation.handleSignOut}>
-                    <LogOutIcon />
-                    Sign out
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <div className="truncate text-[0.75rem] text-muted-foreground leading-tight">
+            {profileHandle}
           </div>
+        </div>
+        <div className="flex items-center gap-1.5 text-muted-foreground">
+          <span className="rounded-md p-1.25 transition-colors hover:bg-background/40 hover:text-foreground">
+            <MicIcon className="size-4.5" />
+          </span>
+          <span className="rounded-md p-1.25 transition-colors hover:bg-background/40 hover:text-foreground">
+            <HeadphonesIcon className="size-4.5" />
+          </span>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  className="rounded-md p-1.25 text-muted-foreground hover:bg-background/40 hover:text-foreground"
+                  size="icon-sm"
+                  variant="ghost"
+                />
+              }
+            >
+              <Settings2Icon className="size-4.5" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" side="top">
+              <DropdownMenuLabel>
+                {profileName}
+                <div className="font-normal text-muted-foreground text-xs">
+                  {profileHandle}
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={navigation.showAddFriendTab}>
+                  <UserPlusIcon />
+                  Add friend
+                </DropdownMenuItem>
+                {view.canCreateServerInvites ? (
+                  <DropdownMenuItem onClick={() => ui.setIsInviteOpen(true)}>
+                    <InviteToServerIcon className="size-4" />
+                    Invite to Server
+                  </DropdownMenuItem>
+                ) : null}
+                <DropdownMenuItem onClick={navigation.handleSignOut}>
+                  <LogOutIcon />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <ChevronDownIcon className="size-3.5 text-muted-foreground" />
         </div>
       </div>
     </div>

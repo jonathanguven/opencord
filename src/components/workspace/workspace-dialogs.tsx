@@ -436,6 +436,7 @@ export function CreateChannelDialog({
                     </InputGroupText>
                   </InputGroupAddon>
                   <InputGroupInput
+                    autoFocus
                     className="border-0 bg-transparent px-3 text-[#f2f3f5] text-sm shadow-none placeholder:text-[#80848e] focus-visible:ring-0"
                     id="channel-name"
                     onChange={(event) => onNameChange(event.target.value)}

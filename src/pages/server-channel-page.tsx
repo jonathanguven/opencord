@@ -50,8 +50,11 @@ export function ServerChannelPage() {
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <ScrollArea className="min-h-0 flex-1">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      <ScrollArea
+        className="min-h-0 flex-1"
+        scrollbarClassName="data-vertical:w-0 data-horizontal:h-0 opacity-0"
+      >
         <MessageFeed
           composerRef={composerRef}
           currentUserId={view.current?.user?._id}
@@ -68,23 +71,21 @@ export function ServerChannelPage() {
           onSubmitEdit={thread.submitEditingMessage}
         />
       </ScrollArea>
-      <div className="border-border/60 border-t px-3 py-2.5">
-        <MessageBox
-          attachment={thread.pendingImageAttachment}
-          draft={thread.messageDraft}
-          onChange={thread.setMessageDraft}
-          onEditLatestMessage={thread.editLatestOwnMessage}
-          onRemoveAttachment={() =>
-            thread
-              .clearPendingImageAttachment({ deleteRemote: true })
-              .catch(() => undefined)
-          }
-          onSend={thread.sendActiveMessage}
-          onUploadImage={thread.attachImageToDraft}
-          placeholder={`Message ${getChannelDisplayName(activeChannel)}`}
-          textareaRef={composerRef}
-        />
-      </div>
+      <MessageBox
+        attachment={thread.pendingImageAttachment}
+        draft={thread.messageDraft}
+        onChange={thread.setMessageDraft}
+        onEditLatestMessage={thread.editLatestOwnMessage}
+        onRemoveAttachment={() =>
+          thread
+            .clearPendingImageAttachment({ deleteRemote: true })
+            .catch(() => undefined)
+        }
+        onSend={thread.sendActiveMessage}
+        onUploadImage={thread.attachImageToDraft}
+        placeholder={`Message ${getChannelDisplayName(activeChannel)}`}
+        textareaRef={composerRef}
+      />
     </div>
   );
 }
