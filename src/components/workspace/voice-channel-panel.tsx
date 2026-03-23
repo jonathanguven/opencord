@@ -128,11 +128,11 @@ export function VoiceChannelPanel({
       />
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-[linear-gradient(135deg,rgb(255_255_255_/_0.08),transparent_38%,transparent_62%,rgb(255_255_255_/_0.03))]"
+        className="absolute inset-0 bg-[linear-gradient(135deg,rgb(255_255_255/0.08),transparent_38%,transparent_62%,rgb(255_255_255/0.03))]"
       />
       <Button
         aria-label={`Join ${channel.name}`}
-        className="relative h-14 rounded-2xl bg-white px-7 font-semibold text-[#111320] shadow-[0_18px_50px_rgb(4_6_26_/_0.45)] transition-transform duration-200 hover:scale-[1.03] hover:bg-white"
+        className="relative h-14 rounded-2xl bg-white px-7 font-semibold text-[#111320] shadow-[0_18px_50px_rgb(4_6_26/0.45)] transition-transform duration-200 hover:scale-[1.03] hover:bg-white"
         onClick={onJoin}
         size="lg"
       >
