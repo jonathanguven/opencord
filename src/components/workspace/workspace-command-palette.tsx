@@ -303,6 +303,7 @@ export function WorkspaceCommandPalette() {
     >
       <Command
         className="bg-popover text-popover-foreground"
+        loop
         shouldFilter={false}
       >
         <CommandInput
